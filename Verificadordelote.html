@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verificador de lote · 9.1</title>
+<meta name="apple-mobile-web-app-title" content="Verificador de lote">
+<meta name="theme-color" content="#15334c">
+<link rel="apple-touch-icon" href="icone-lote.png">
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<style>
+:root{color-scheme:light dark;--bg:#edf2f7;--card:#fff;--tx:#152943;--mu:#596d81;--pr:#176b80;--accent:#d9eff0;--ok:#116a43;--er:#ae3434;--okb:#e3f7eb;--erb:#fce9e8;--bd:#dce6eb;--field:#f8fafb;--shadow:0 10px 30px rgba(26,53,75,.07)}
+@media(prefers-color-scheme:dark){:root{--bg:#0c1924;--card:#142837;--tx:#eff6f8;--mu:#b0c2cc;--pr:#45b0b9;--accent:#193e48;--ok:#83e5af;--er:#ffb4ac;--okb:#143d2b;--erb:#4b2629;--bd:#294455;--field:#10212d;--shadow:0 10px 30px rgba(0,0,0,.17)}}
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}main{max-width:610px;margin:auto;padding:24px 16px 42px}.hero{padding:25px 24px;border-radius:22px;background:linear-gradient(135deg,#15334c,#176a78);color:#fff;box-shadow:0 12px 30px rgba(21,64,82,.18)}.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#aee8e7}h1{font-size:clamp(23px,6vw,30px);line-height:1.17;letter-spacing:-.035em;margin:9px 0} .hero p{margin:0;color:#d3ebed;font-size:14px}.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:20px;margin-top:14px;box-shadow:var(--shadow)}h2{font-size:16px;color:var(--tx);margin:0 0 12px;font-weight:750;letter-spacing:-.01em}h2:not(:first-child){margin-top:20px}.sub{font-weight:400;color:var(--mu);font-size:13px;display:block;margin-top:3px}.row{display:flex;gap:9px;flex-wrap:wrap}button,.btn{font:inherit;font-size:15px;font-weight:700;padding:13px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--field);color:var(--tx);flex:1;min-width:80px;text-align:center;cursor:pointer}#lines button{min-width:calc(50% - 5px)}button.on{background:var(--pr);border-color:var(--pr);color:#fff;box-shadow:0 5px 14px rgba(23,107,128,.2)}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #4bbec5;outline-offset:2px}.main{background:#176b80;color:#fff;border-color:#176b80;display:block;margin-top:12px}#go{width:100%}textarea,input[type=number]{width:100%;font:16px/1.5 ui-monospace,Menlo,monospace;padding:13px;border-radius:12px;border:1px solid var(--bd);background:var(--field);color:var(--tx);text-transform:uppercase}textarea{resize:vertical;overflow-wrap:anywhere;white-space:pre-wrap}#registroPreview{display:block;width:100%;height:auto;border:1px solid var(--bd);border-radius:12px;margin-top:12px}#registroPanel{margin-top:16px}#saveRegistro{width:100%;margin-top:12px}.fb{position:relative;width:100%}.fb input[type=file]{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;font-size:100px;cursor:pointer}.fb span{display:block;font-weight:700;padding:15px 12px;border-radius:12px;border:1px solid #176b80;background:#176b80;color:#fff;text-align:center}.fb.off span{background:var(--field);color:var(--tx);opacity:.55;border-color:var(--bd)}.res{margin-top:16px;border-radius:12px;padding:15px;font-weight:600}.res.ok{background:var(--okb);color:var(--ok)}.res.er{background:var(--erb);color:var(--er)}.res.wn{background:#fde9ad;color:#653e0d}button:disabled{opacity:.5;cursor:wait}.fb.working{opacity:.5;pointer-events:none}[hidden]{display:none!important}ul{margin:8px 0 0;padding-left:20px;font-weight:500}small{color:var(--mu);font-size:13px}.instruction-box{background:var(--field);border:1px solid var(--bd);border-radius:12px;padding:13px 15px;margin-bottom:14px}.instruction-box small{line-height:1.65}.instruction-box b{color:var(--tx)}#info{display:block;line-height:1.5}#st:empty{display:none}#ex{border:1px solid var(--bd);color:var(--tx);line-height:1.5!important}#cropCanvas{margin-top:10px}p{margin:10px 0}#prod{margin-top:18px}#prod h2{margin-top:0}
+</style>
+</head>
+<body>
+<main>
+<header class="hero"><div class="eyebrow">Conferência de envase</div><h1>Verificador de<br>virada de lote</h1><p>Selecione a linha e confira a codificação da embalagem.</p><p style="font-size:12px;margin-top:12px">Versão 9.1 · validação por leitura completa</p></header>
+<section class="card">
+
+<h2>Selecione a linha de embalagem</h2>
+<div class="row" id="lines"></div>
+<div id="prod" style="display:none"><h2>Produto</h2><div class="row"><button data-p="OM">OM</button><button data-p="TT">TT</button></div></div>
+
+<h2>Lote parcial? (pallets, deixe vazio se for lote cheio)</h2>
+<input type="number" id="pal" min="1" inputmode="numeric" placeholder="nº de pallets">
+<p><small id="info"></small></p>
+
+</section>
+<section class="card">
+<h2>Foto da codificadora</h2>
+<div class="instruction-box">
+ <small><b>Como proceder:</b><br>
+ 1. Tire uma foto nítida do display, evitando reflexos.<br>
+ 2. Selecione a foto na galeria. O verificador selecionará a área automaticamente; confira a seleção e toque em <b>Ler esta área</b>.</small>
+</div>
+
+<div class="fb off">
+ <span>📁 Selecionar foto da câmera / galeria</span>
+ <input type="file" id="foto" accept="image/*">
+</div>
+
+<p><small id="st" role="status" aria-live="polite"></small></p>
+
+<div id="cropPanel" hidden>
+<canvas id="cropCanvas" style="width:100%;touch-action:none;border-radius:10px;background:#000;display:block"></canvas>
+<div class="row" style="margin-top:10px"><button type="button" id="cropGo" class="main" style="margin:0">Ler esta área</button><button type="button" id="cropCancel">Cancelar</button></div>
+</div>
+
+</section>
+<section class="card">
+<h2>Texto lido da foto</h2>
+<p><small>Exemplo de codificação da linha selecionada (só um exemplo):</small></p>
+<pre id="ex" style="margin:0 0 8px;font:14px ui-monospace,monospace;overflow-x:auto;background:var(--card);padding:8px;border-radius:8px">0652-26-21600
+BSOM10 FAB:OUT/2026 VAL:OUT/2031</pre>
+<textarea id="txt" rows="4" wrap="soft" placeholder="Selecione a foto para ler a codificação"></textarea>
+
+<button class="main" id="go">Verificar de novo</button>
+<div id="out"></div>
+<details id="geometryDiagnostic" hidden style="margin-top:12px"><summary>Diagnóstico da leitura</summary><p><small id="geometrySummary"></small></p><button type="button" id="saveDiagnostic">Salvar diagnóstico</button></details>
+<button type="button" id="saveRegistro">Salvar registro da verificação</button>
+<div id="registroPanel" hidden><small>Prévia do registro. No iPad, mantenha a imagem pressionada para salvá-la em Fotos, se necessário.</small><img id="registroPreview" alt="Prévia do registro da verificação"><p><small id="registroStatus" role="status"></small></p></div>
+</section>
+</main>
+<script>
+var CFG={"1L":{vol:21600,pal:720},"5L":{vol:36000,pal:600},"20L":{vol:74880,pal:960},"1000L":{vol:22000,pal:1000}};
+var M=["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+var linha=null,prod="OM";
+var $=function(i){return document.getElementById(i)};
+
+function info(){
+ var c=CFG[linha];
+ if(c){
+  var pp=$("pal").value;
+  $("ex").textContent="0652-26-"+(pp?pp*c.pal:c.vol)+"\nBS"+((linha=="20L"||linha=="1000L")?prod:"OM")+"10 FAB:OUT/2026 VAL:OUT/2031"
+ }
+ $("info").textContent=c?("Lote cheio: "+c.vol.toLocaleString("pt-BR")+" L ("+(c.vol/c.pal)+" pallets de "+c.pal+" L)"+($("pal").value?" | Parcial: "+($("pal").value*c.pal).toLocaleString("pt-BR")+" L":"")):""
+}
+
+Object.keys(CFG).forEach(function(k){
+ var b=document.createElement("button");
+ b.textContent=k=="1000L"?"1.000 litros":k.replace("L"," litro"+(k=="1L"?"":"s"));
+ b.onclick=function(){
+  linha=k;prod="OM";
+  document.querySelector(".fb").classList.remove("off");
+  $("st").style.color="";$("st").textContent="";
+  document.querySelectorAll("#lines button").forEach(function(x){x.classList.toggle("on",x===b)});
+  $("prod").style.display=(k=="20L"||k=="1000L")?"block":"none";
+  selProd("OM");info()
+ };
+ $("lines").appendChild(b)
+});
+
+function selProd(p){prod=p;info();document.querySelectorAll("#prod button").forEach(function(x){x.classList.toggle("on",x.dataset.p==p.toUpperCase())})}
+document.querySelectorAll("#prod button").forEach(function(b){b.onclick=function(){selProd(b.dataset.p)}});
+$("pal").oninput=info;
+
+document.querySelector(".fb").addEventListener("click",function(e){
+ if(!linha){
+  e.preventDefault();e.stopPropagation();
+  $("st").style.color="var(--er)";
+  $("st").textContent="Selecione primeiro a linha de embalagem (1, 5, 20 ou 1.000 litros).";
+ }
+},true);
+
+var MAX_SIDE=1400, MAX_PIXELS=1400000, busy=false;
+var tesseractLoading=null;
+var STATE_KEY='virada-lote-v5';
+
+function saveState(pending){
+ try{localStorage.setItem(STATE_KEY,JSON.stringify({linha:linha,prod:prod,pal:$("pal").value,txt:$("txt").value,pending:!!pending}))}catch(e){}
+}
+function setStatus(message,error){$("st").textContent=message;$("st").style.color=error?'var(--er)':''}
+function setBusy(value){
+ busy=value;
+ document.querySelectorAll('#lines button,#prod button,#pal,#go,#foto,#saveRegistro').forEach(function(el){el.disabled=value});
+ document.querySelector('.fb').classList.toggle('working',value);
+}
+function fitSize(width,height,zoom){
+ var side=zoom?2000:MAX_SIDE, pixels=zoom?2400000:MAX_PIXELS;
+ if(!width||!height)throw new Error('A foto não tem dimensões válidas.');
+ var scale=Math.min(1,side/Math.max(width,height),Math.sqrt(pixels/(width*height)));
+ return {width:Math.max(1,Math.floor(width*scale)),height:Math.max(1,Math.floor(height*scale))};
+}
+function clearCanvas(canvas){if(canvas){canvas.width=1;canvas.height=1}}
+
+async function smallCanvas(file,zoom){
+ var bitmap=null,img=null,url=null,canvas=null;
+ try{
+  if(window.createImageBitmap){
+   try{if(!zoom)bitmap=await createImageBitmap(file,{resizeWidth:MAX_SIDE,resizeQuality:'medium'});else bitmap=await createImageBitmap(file)}catch(e){}
+  }
+  if(bitmap){
+   var size=fitSize(bitmap.width,bitmap.height,zoom);
+   canvas=document.createElement('canvas');canvas.width=size.width;canvas.height=size.height;
+   canvas.getContext('2d').drawImage(bitmap,0,0,size.width,size.height);
+  }else{
+   url=URL.createObjectURL(file);img=new Image();
+   await new Promise(function(resolve,reject){img.onload=resolve;img.onerror=function(){reject(new Error('Não foi possível abrir a imagem. Selecione a foto novamente ou exporte uma cópia em JPG ou PNG.'))};img.src=url});
+   var dimensions=fitSize(img.naturalWidth,img.naturalHeight,zoom);
+   canvas=document.createElement('canvas');canvas.width=dimensions.width;canvas.height=dimensions.height;
+   canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+  }
+  return canvas;
+ }catch(e){clearCanvas(canvas);throw e}
+ finally{if(bitmap)bitmap.close();if(img){img.onload=img.onerror=null;img.src=''}if(url)URL.revokeObjectURL(url)}
+}
+
+function detectBox(source){
+ var W=source.width,H=source.height,pixels=source.getContext('2d').getImageData(0,0,W,H).data;
+ var rows=new Uint16Array(H),max=0,x,y;
+ function blue(i){return pixels[i+2]>140&&pixels[i]<120&&pixels[i+1]<120&&pixels[i+2]>pixels[i]+60}
+ for(y=0;y<H;y++){var count=0;for(x=0;x<W;x++)if(blue((y*W+x)*4))count++;rows[y]=count;if(count>max)max=count}
+ var top=0,bottom=H-1,left=0,right=W-1;
+ if(max>W*.2){
+  top=-1;for(y=0;y<H;y++)if(rows[y]>max*.5){if(top<0)top=y;bottom=y}
+  left=W;right=0;
+  for(y=top;y<=bottom;y++)for(x=0;x<W;x++)if(blue((y*W+x)*4)){if(x<left)left=x;if(x>right)right=x}
+ }
+ return {left:left,top:top,right:right,bottom:bottom};
+}
+
+function detectBlueBand(source){
+ var W=source.width,H=source.height,p=source.getContext('2d').getImageData(0,0,W,H).data;
+ var rows=new Uint32Array(H),max=0,x,y;
+ function isBlue(i){return p[i+2]>140&&p[i]<120&&p[i+1]<120&&p[i+2]>p[i]+60}
+ for(y=0;y<H;y++){var n=0;for(x=0;x<W;x++)if(isBlue((y*W+x)*4))n++;rows[y]=n;if(n>max)max=n}
+ if(max<W*.2)return null;
+ var threshold=max*.5,runs=[],start=-1;
+ for(y=0;y<=H;y++){
+  var active=y<H&&rows[y]>threshold;
+  if(active&&start<0)start=y;
+  if(!active&&start>=0){if(y-start>=Math.max(8,H*.025))runs.push({top:start,bottom:y-1});start=-1}
+ }
+ if(!runs.length)return null;
+ runs.sort(function(a,b){return (b.bottom-b.top)-(a.bottom-a.top)});
+ var band=runs[0],bh=band.bottom-band.top+1;
+ if(bh<20)return null;
+ var col=new Uint32Array(W);
+ for(y=band.top;y<=band.bottom;y++)for(x=0;x<W;x++)if(isBlue((y*W+x)*4))col[x]++;
+ var left=0,right=W-1;
+ while(left<W&&col[left]<bh*.2)left++;
+ while(right>=0&&col[right]<bh*.2)right--;
+ if(right-left<W*.18)return null;
+ return {left:Math.max(0,left-5),right:Math.min(W-1,right+5),top:band.top,bottom:band.bottom};
+}
+
+// Select the image area independently of the packaging being checked.
+function detectPhotoArea(source){
+ var original=detectBox(source),band=detectBlueBand(source);
+ if(!band)return original;
+ // Preserve the successful 1 L crop. Prefer a contiguous blue band only
+ // when the broad detector also captured the menu or a separated blue strip.
+ return original.bottom-original.top+1>(band.bottom-band.top+1)*1.3?band:original;
+}
+function needsPhotoZoom(source,box){return (box.right-box.left+1)/source.width<0.65}
+
+function prepareDisplay(source,box,zoom){
+ var cw=box.right-box.left+1,ch=box.bottom-box.top+1;
+ var k=zoom?Math.min(4,Math.max(1,2200/cw),Math.sqrt(3200000/(cw*ch))):Math.min(3,Math.max(1,1500/cw));
+ var canvas=document.createElement('canvas');canvas.width=Math.round(cw*k);canvas.height=Math.round(ch*k);
+ var cx=canvas.getContext('2d');cx.imageSmoothingQuality='high';
+ cx.drawImage(source,box.left,box.top,cw,ch,0,0,canvas.width,canvas.height);
+ return canvas;
+}
+
+function fixSeparators(data){
+ try{
+  var out=[];
+  (data.blocks||[]).forEach(function(bl){(bl.paragraphs||[]).forEach(function(pa){(pa.lines||[]).forEach(function(li){
+   var ws=li.words||[],sy=[];
+   ws.forEach(function(w){(w.symbols||[]).forEach(function(s){sy.push(s)})});
+   if(!sy.length){out.push(li.text||'');return}
+   var hs=sy.filter(function(s){return /[A-Z0-9]/.test(s.text)}).map(function(s){return s.bbox.y1-s.bbox.y0}).sort(function(p,q){return p-q});
+   var med=hs[Math.floor(hs.length/2)]||0;
+   out.push(ws.map(function(w){return (w.symbols||[]).map(function(s){
+    if(med&&(s.text==='-'||s.text==='/')){var h=s.bbox.y1-s.bbox.y0;if(h>=.55*med&&h<=1.3*med)return '/';if(h<=.4*med)return '-'}
+    return s.text}).join('')}).join(' '));
+  })})});
+  return out.length?out.join('\n'):data.text;
+ }catch(err){return data.text}
+}
+
+function loadOCR(){
+ if(window.Tesseract)return Promise.resolve();
+ if(tesseractLoading)return tesseractLoading;
+ tesseractLoading=new Promise(function(resolve,reject){
+  var script=document.createElement('script');
+  var timeout=setTimeout(function(){failed()},30000);
+  function failed(){clearTimeout(timeout);script.remove();tesseractLoading=null;reject(new Error('Não foi possível carregar o leitor. Confira a internet e tente novamente.'))}
+  script.src='https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js';
+  script.onload=function(){clearTimeout(timeout);if(window.Tesseract)resolve();else failed()};script.onerror=failed;
+  document.head.appendChild(script);
+ });
+ return tesseractLoading;
+}
+
+function readLines(text){
+ var lines=text.toUpperCase().split(/\r?\n/).map(function(l){return l.trim()}).filter(Boolean);
+ var ib=lines.findIndex(function(l){return l.indexOf('BS')>=0});
+ if(ib<1)return {a:'',b:''};
+ var up=lines[ib-1].replace(/\s+/g,'').replace(/^[^0-9]+/,'');
+ var bs=lines[ib].slice(lines[ib].indexOf('BS')).replace(/\s*:\s*/g,':').replace(/\s+/g,' ').replace(/(\d{4})\s+\S{1,3}$/,'$1');
+ return {a:up,b:bs};
+}
+
+function winner(votes){var best='',n=0,tie=false;for(var k in votes){if(votes[k]>n){best=k;n=votes[k];tie=false}else if(votes[k]===n)tie=true}return n>=2&&!tie?best:''}
+
+// Classifies the original (unmodified) glyph pixels, not an expected volume.
+function geometrySeven(gray,W,H,box){
+ var x0=Math.max(0,Math.floor(box.x0)-1),y0=Math.max(0,Math.floor(box.y0)-1);
+ var x1=Math.min(W-1,Math.ceil(box.x1)+1),y1=Math.min(H-1,Math.ceil(box.y1)+1);
+ var votes=0,metrics=[];
+ [110,130,150].forEach(function(threshold){
+  var l=x1,r=x0,t=y1,b=y0,count=0,x,y;
+  for(y=y0;y<=y1;y++)for(x=x0;x<=x1;x++)if(gray[y*W+x]>threshold){l=Math.min(l,x);r=Math.max(r,x);t=Math.min(t,y);b=Math.max(b,y);count++}
+  var w=r-l+1,h=b-t+1;
+  if(count<20||h<10||w<5||w/h<.35||w/h>1.25){metrics.push(null);return}
+  function band(a,z){
+   var sum=0,sum2=0,n=0,active=0;
+   var top=t+Math.floor(h*a),bottom=Math.min(b,t+Math.ceil(h*z)-1);
+   for(var yy=top;yy<=bottom;yy++){var row=0;for(var xx=l;xx<=r;xx++)if(gray[yy*W+xx]>threshold){sum+=xx-l;sum2+=(xx-l)*(xx-l);n++;row++}if(row)active++}
+   return n?{center:sum/n/w,spread:Math.sqrt(Math.max(0,sum2/n-(sum/n)*(sum/n)))/w,coverage:active/(bottom-top+1)}:null;
+  }
+  var upper=band(.28,.52),lower=band(.67,.96),topL=r,topR=l;
+  for(y=t;y<t+Math.ceil(h*.25);y++)for(x=l;x<=r;x++)if(gray[y*W+x]>threshold){topL=Math.min(topL,x);topR=Math.max(topR,x)}
+  var delta=upper&&lower?upper.center-lower.center:0;
+  var ok=upper&&lower&&delta>.11&&upper.center>.52&&lower.center>.22&&lower.center<.62&&lower.spread<.18&&upper.coverage>=.6&&lower.coverage>=.6&&(topR-topL+1)/w>=.65;
+  if(ok)votes++;metrics.push({delta:delta,seven:!!ok});
+ });
+ return {seven:votes===3,votes:votes,metrics:metrics};
+}
+var geometryTrace20=[];
+function geometryLine20(data,gray,W,H,candidate){
+ var trace={candidato:candidate,etapa:'inicio',caracteres:[]};geometryTrace20.push(trace);
+ var lines=[];(data.blocks||[]).forEach(function(bl){(bl.paragraphs||[]).forEach(function(pa){(pa.lines||[]).forEach(function(li){lines.push(li)})})});
+ var i=lines.findIndex(function(li){return (li.text||'').toUpperCase().indexOf('BS')>=0});
+ if(i<1){trace.etapa='linha BS não localizada';return null;}
+ var symbols=[];(lines[i-1].words||[]).forEach(function(w){(w.symbols||[]).forEach(function(s){if(s.text&&!/\s/.test(s.text))symbols.push(s)})});
+ var raw=symbols.map(function(s){return s.text.toUpperCase()}).join('');
+ var leading=raw.search(/\d/);
+ if(leading>0){symbols=symbols.slice(leading);raw=raw.slice(leading)}
+ trace.simbolos=raw;
+ if(raw!==candidate){trace.etapa='mapeamento dos caracteres não coincidiu';return null}
+ if(!/^\d{3,6}-\d{2}-[0-9T]+$/.test(raw)){trace.etapa='linha numérica não segmentada com precisão';return null} 
+ var start=raw.lastIndexOf('-')+1,changed=false;
+ for(var k=start;k<symbols.length;k++)if(raw[k]==='T'){
+  if(!symbols[k].bbox){trace.etapa='caractere sem posição na imagem';return null}
+  var assessment=geometrySeven(gray,W,H,symbols[k].bbox);
+  trace.caracteres.push({posicao:k,caixa:symbols[k].bbox,avaliacao:assessment});
+  if(!assessment.seven){trace.etapa='geometria não confirmou 7';return null}
+  changed=true;
+ }
+ trace.etapa=changed?'geometria confirmou 7':'sem T no volume';
+ return changed?raw.slice(0,start)+raw.slice(start).replace(/T/g,'7'):null;
+}
+
+
+var leituraCompletaInfo=null;
+function validateCompleteReading(candidate){
+ if(!candidate.a||!candidate.b)return null;
+ var text=candidate.a+'\n'+candidate.b,result=chk(text,true);
+ return {texto:text,resultado:result,valida:!result.errs.length&&!result.warns.length};
+}
+
+var diagnosticoLeitura={versao:'9.1',ambiente:{agente:navigator.userAgent},etapas:[]},leituraCompatDuvidosa=false;
+function pixelFingerprint(bytes){var h=2166136261;for(var i=0;i<bytes.length;i++){h^=bytes[i];h=Math.imul(h,16777619)}return ('00000000'+(h>>>0).toString(16)).slice(-8)}
+// Fixed pixel resampling for the compatibility fallback: identical input bytes
+// and dimensions yield identical output; image decoding can still vary.
+function prepareUniform(source,box,zoom){
+ var left=Math.max(0,Math.floor(box.left)),top=Math.max(0,Math.floor(box.top));
+ var cw=Math.min(source.width-left,Math.floor(box.right)-left+1),ch=Math.min(source.height-top,Math.floor(box.bottom)-top+1);
+ var k=Math.min(4,Math.max(1,1600/cw),Math.sqrt(2400000/(cw*ch)));
+ var W=Math.max(1,Math.round(cw*k)),H=Math.max(1,Math.round(ch*k));
+ var input=source.getContext('2d').getImageData(left,top,cw,ch).data,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+ var c=cv.getContext('2d'),out=c.createImageData(W,H),src=new Uint8Array(cw*ch);
+ for(var i=0;i<src.length;i++)src[i]=Math.round((input[i*4]+input[i*4+1])/2);
+ for(var y=0;y<H;y++){
+  var sy=Math.max(0,Math.min(ch-1,(y+.5)*ch/H-.5)),y0=Math.floor(sy),y1=Math.min(ch-1,y0+1),fy=sy-y0;
+  for(var x=0;x<W;x++){
+   var sx=Math.max(0,Math.min(cw-1,(x+.5)*cw/W-.5)),x0=Math.floor(sx),x1=Math.min(cw-1,x0+1),fx=sx-x0;
+   var a=src[y0*cw+x0]*(1-fx)+src[y0*cw+x1]*fx,b=src[y1*cw+x0]*(1-fx)+src[y1*cw+x1]*fx,v=Math.round(a*(1-fy)+b*fy),j=(y*W+x)*4;
+   out.data[j]=out.data[j+1]=out.data[j+2]=v;out.data[j+3]=255;
+  }
+ }
+ c.putImageData(out,0,0);return cv;
+}
+
+// Detect a long, nearly vertical light frame in the left margin, using pixels only.
+// Never remove a character from the recognized string to fit a lot format.
+function suppressLeftFrame(canvas){
+ var W=canvas.width,H=canvas.height;
+ if(W<300||H<100)return null;
+ var c=canvas.getContext('2d'),data=c.getImageData(0,0,W,H),p=data.data;
+ var limit=Math.floor(W*.08),step=Math.max(2,Math.floor(H/120)),best=null;
+ function light(x,y){if(x<0||x>=W)return false;var i=(y*W+x)*4,r=p[i],g=p[i+1],b=p[i+2];return r>110&&g>110&&b-Math.min(r,g)<110}
+ for(var slope=-.15;slope<=.1501;slope+=.005){
+  for(var start=Math.ceil(W*.01);start<=limit;start++){
+   var hits=0,total=0,bands=[0,0,0],counts=[0,0,0];
+   for(var y=0;y<H;y+=step){
+    var x=Math.round(start+slope*y),band=Math.min(2,Math.floor(y*3/H));counts[band]++;total++;
+    if(x>=0&&x<=limit&&(light(x-1,y)||light(x,y)||light(x+1,y))){hits++;bands[band]++}
+   }
+   var score=hits/total;
+   if(score>=.82&&bands.every(function(n,i){return n/counts[i]>=.45})&&(!best||score>best.score))best={x:start,slope:slope,score:score};
+  }
+ }
+ if(!best)return null;
+ var radius=Math.max(2,Math.ceil(W*.0025));
+ for(var yy=0;yy<H;yy++){
+  var center=Math.round(best.x+best.slope*yy);
+  for(var xx=Math.max(0,center-radius);xx<=Math.min(W-1,center+radius);xx++){
+   var at=(yy*W+xx)*4;p[at]=p[at+1]=p[at+2]=0;p[at+3]=255;
+  }
+ }
+ c.putImageData(data,0,0);best.raio=radius;return best;
+}
+
+var leituraDuvidosa20=false, releituraNumericaInfo=null;
+async function ocr(source,box,zoom,uniform){
+ leituraDuvidosa20=false;leituraCompatDuvidosa=false;leituraCompletaInfo=null;releituraNumericaInfo=null;geometryTrace20=[];
+ var canvas=null,worker=null,gray=null,data=null,numericCrops=[];
+ try{
+  canvas=uniform?prepareUniform(source,box,zoom):prepareDisplay(source,box,zoom);
+  var removedFrame=suppressLeftFrame(canvas);
+  await loadOCR();
+  setStatus('Preparando o leitor no aparelho...');
+  worker=await Tesseract.createWorker('eng',1,{
+   legacyCore:false,legacyLang:false,
+   logger:function(message){if(message.status==='recognizing text')setStatus('Lendo a foto: '+Math.round(message.progress*100)+'%')}
+  });
+  await worker.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/: ',tessedit_pageseg_mode:'6'});
+  var context=canvas.getContext('2d');
+  data=context.getImageData(0,0,canvas.width,canvas.height);
+  var pixels=data.data;gray=new Uint8Array(canvas.width*canvas.height);
+  for(var i=0;i<gray.length;i++)gray[i]=Math.round(.299*pixels[i*4]+.587*pixels[i*4+1]+.114*pixels[i*4+2]);
+  var stage={modo:uniform?'uniforme':'original',moldura:removedFrame,fonte:{largura:source.width,altura:source.height},area:box,zoom:!!zoom,preparada:{largura:canvas.width,altura:canvas.height},pixels:pixelFingerprint(gray),tentativas:[]};diagnosticoLeitura.etapas.push(stage);
+  var geometryVotes={},geometryRaw={},geometryCandidates=[],votes1={},votes2={},tries=[[140,1],[130,1],[120,1],[140,2],[130,2],[120,2]];
+  if(linha==="20L")tries=tries.concat([[110,1],[110,0],[100,1,'red'],[130,1,'red']]);
+  if(linha!=="20L")tries=tries.concat([[110,0],[100,1,'red'],[130,1,'red'],[110,1],[100,0,'red'],[120,0,'red']]);
+  if(uniform)tries=[[90,0],[100,0],[110,0],[120,0],[130,0],[140,0],[90,1],[100,1],[110,1],[120,1],[130,1],[140,1]];
+  var red=null;{red=new Uint8Array(gray.length);for(var j=0;j<red.length;j++)red[j]=pixels[j*4]}
+  var w2=canvas.width,h2=canvas.height,bin=new Uint8Array(w2*h2),tmp=new Uint8Array(w2*h2),x,y,d,m;
+  for(var attempt=0;attempt<tries.length;attempt++){
+   setStatus((uniform?'Modo de compatibilidade: ':'Lendo a foto: ')+'tentativa '+(attempt+1)+' de '+tries.length+'...');
+   var T=tries[attempt][0],rad=tries[attempt][1];
+   for(i=0;i<bin.length;i++)bin[i]=(tries[attempt][2]==='red'?red[i]:gray[i])>T?0:255;
+   for(y=0;y<h2;y++)for(x=0;x<w2;x++){m=255;for(d=-rad;d<=rad;d++){if(x+d>=0&&x+d<w2&&bin[y*w2+x+d]<m)m=bin[y*w2+x+d]}tmp[y*w2+x]=m}
+   for(y=0;y<h2;y++)for(x=0;x<w2;x++){m=255;for(d=-rad;d<=rad;d++){if(y+d>=0&&y+d<h2&&tmp[(y+d)*w2+x]<m)m=tmp[(y+d)*w2+x]}var o4=(y*w2+x)*4;pixels[o4]=pixels[o4+1]=pixels[o4+2]=m;pixels[o4+3]=255}
+   context.putImageData(data,0,0);
+   var inputHash=pixelFingerprint(pixels);
+   var result=await worker.recognize(canvas,{}, {text:true,blocks:true});
+   stage.tentativas.push({contraste:T,raio:rad,canal:tries[attempt][2]||'cinza',pixels:inputHash,texto:result.data.text});
+   var candidateText=fixSeparators(result.data),cand=readLines(candidateText);
+   // A complete pair must come from this recognition pass, never mixed votes.
+   var bsCount=candidateText.toUpperCase().split(/\r?\n/).filter(function(l){return l.indexOf('BS')>=0}).length;
+   var complete=bsCount===1?validateCompleteReading(cand):null;
+   var geometryCorrection=null,completeAttempt=attempt+1;
+   if(linha==='20L'&&cand.a&&cand.a.indexOf('T')>=0){
+    var geometric=geometryLine20(result.data,gray,canvas.width,canvas.height,cand.a);
+    if(geometric){
+     var key=cand.a.split('-')[2]+'|'+geometric.split('-')[2];geometryVotes[key]=(geometryVotes[key]||0)+1;geometryRaw[key]={original:cand.a,novo:geometric};
+     var corrected=validateCompleteReading({a:geometric,b:cand.b});
+     if(bsCount===1&&corrected&&corrected.valida)geometryCandidates.push({key:key,original:cand.a,novo:geometric,leitura:corrected,tentativa:attempt+1});
+    }
+   }
+   var attemptInfo=stage.tentativas[stage.tentativas.length-1];
+   attemptInfo.extraido={lote:cand.a,bs:cand.b};
+   attemptInfo.validacao=complete?{valida:complete.valida,erros:complete.resultado.errs,avisos:complete.resultado.warns}:{valida:false,erros:['Duas linhas completas não identificadas.']};
+   // A valid earlier complete pair can await later geometric confirmations.
+   // The two lines remain from that earlier pass; later passes supply only glyph evidence.
+   if(linha==='20L'&&!(complete&&complete.valida)){
+    var ready=geometryCandidates.find(function(c){return geometryVotes[c.key]>=3});
+    if(ready){
+     complete=ready.leitura;completeAttempt=ready.tentativa;
+     geometryCorrection={original:ready.original,novo:ready.novo,confirmacoes:geometryVotes[ready.key],metodo:'geometria'};
+     stage.tentativas[completeAttempt-1].validacao={valida:true,erros:[],avisos:[],geometriaConfirmadaNaTentativa:attempt+1};
+    }
+   }
+   if(cand.a)votes1[cand.a]=(votes1[cand.a]||0)+1;
+   if(cand.b)votes2[cand.b]=(votes2[cand.b]||0)+1;
+   if(complete&&complete.valida){
+    leituraDuvidosa20=false;leituraCompatDuvidosa=false;releituraNumericaInfo=geometryCorrection;
+    leituraCompletaInfo={modo:stage.modo,tentativa:completeAttempt,confirmadaNaTentativa:attempt+1,criterio:'duas linhas da mesma tentativa aprovadas em todas as regras',texto:complete.texto};
+    stage.aprovacao=leituraCompletaInfo;stage.votos={lote:votes1,bs:votes2};stage.resultado=complete.texto;
+    return complete.texto;
+   }
+  }
+  var r1=winner(votes1),r2=winner(votes2),bsConcordou=!!r2;
+  var loteConcordou=r1,bsConfirmado=r2;
+  if(linha==='20L'&&(!r1||!r2)){
+   function bestCandidate(votes){var keys=Object.keys(votes);keys.sort(function(a,b){return votes[b]-votes[a]});return keys[0]||''}
+   r1=r1||bestCandidate(votes1);r2=r2||bestCandidate(votes2);
+   if(r1&&r2)leituraDuvidosa20=true;
+  }
+  if(linha==='20L'&&r1&&r2&&r1.indexOf('T')>=0){
+   var gKeys=Object.keys(geometryVotes).filter(function(key){return geometryRaw[key].original.split('-')[2]===r1.split('-')[2]&&geometryVotes[key]>=3});
+   if(gKeys.length===1){var g=geometryRaw[gKeys[0]];releituraNumericaInfo={original:r1,novo:r1.slice(0,r1.lastIndexOf('-')+1)+g.novo.split('-')[2],confirmacoes:geometryVotes[gKeys[0]],metodo:'geometria'};r1=releituraNumericaInfo.novo;leituraDuvidosa20=!bsConcordou}
+  }
+  // 20 L retains its validated field-consensus route after 3 geometric confirmations.
+  // Neither field may be merely a best-effort candidate or tied vote.
+  if(linha==='20L'&&loteConcordou&&bsConfirmado&&releituraNumericaInfo&&releituraNumericaInfo.original===loteConcordou&&releituraNumericaInfo.confirmacoes>=3){
+   var consensus=validateCompleteReading({a:r1,b:r2});
+   if(consensus&&consensus.valida){
+    leituraDuvidosa20=false;leituraCompatDuvidosa=false;
+    leituraCompletaInfo={modo:stage.modo,metodo:'consenso-geometrico-20l',criterio:'lote e BS confirmados separadamente por votação sem empate; geometria confirmou 7 em pelo menos 3 varreduras; todas as regras aprovadas',confirmacoesLote:votes1[loteConcordou],confirmacoesBS:votes2[bsConfirmado],confirmacoesGeometria:releituraNumericaInfo.confirmacoes,texto:consensus.texto};
+    stage.aprovacao=leituraCompletaInfo;stage.votos={lote:votes1,bs:votes2};stage.resultado=consensus.texto;
+    return consensus.texto;
+   }
+  }
+  if(uniform&&(!r1||!r2)){
+   function topReading(v){return Object.keys(v).sort(function(a,b){return v[b]-v[a]})[0]||''}
+   r1=r1||topReading(votes1);r2=r2||topReading(votes2);
+   if(r1&&r2)leituraCompatDuvidosa=true;
+  }
+  leituraCompatDuvidosa=!!(r1&&r2); // No complete pass was approved: do not turn mixed votes green.
+  stage.votos={lote:votes1,bs:votes2};stage.resultado=r1&&r2?r1+'\n'+r2:'';
+  return stage.resultado; 
+ }finally{
+  if(stage)stage.geometria=geometryTrace20.slice();
+  gray=null;data=null;clearCanvas(canvas);
+  if(worker)try{await worker.terminate()}catch(e){}
+ }
+}
+
+var pendingCanvas=null,pendingFile=null,cropSel=null,dragStart=null;
+function dropPending(){clearCanvas(pendingCanvas);pendingCanvas=null;pendingFile=null;cropSel=null;$("cropPanel").hidden=true}
+function drawCrop(){
+ var src=pendingCanvas,cv=$("cropCanvas");if(!src||!cropSel)return;
+ var sc=Math.min(1,720/src.width);cv.width=Math.round(src.width*sc);cv.height=Math.round(src.height*sc);cv.dataset.s=sc;
+ var c=cv.getContext('2d');c.drawImage(src,0,0,cv.width,cv.height);
+ var x=cropSel.left*sc,y=cropSel.top*sc,w=(cropSel.right-cropSel.left+1)*sc,h=(cropSel.bottom-cropSel.top+1)*sc;
+ c.fillStyle='rgba(0,0,0,.5)';c.fillRect(0,0,cv.width,y);c.fillRect(0,y+h,cv.width,cv.height-y-h);c.fillRect(0,y,x,h);c.fillRect(x+w,y,cv.width-x-w,h);
+ c.strokeStyle='#ffd400';c.lineWidth=3;c.strokeRect(x,y,w,h);
+}
+function cropPoint(e){
+ var cv=$("cropCanvas"),r=cv.getBoundingClientRect(),sc=+cv.dataset.s;
+ return {x:Math.max(0,Math.min(pendingCanvas.width-1,(e.clientX-r.left)*(cv.width/r.width)/sc)),y:Math.max(0,Math.min(pendingCanvas.height-1,(e.clientY-r.top)*(cv.height/r.height)/sc))};
+}
+$("cropCanvas").onpointerdown=function(e){if(!pendingCanvas)return;this.setPointerCapture(e.pointerId);dragStart=cropPoint(e)};
+$("cropCanvas").onpointermove=function(e){
+ if(!dragStart||!pendingCanvas)return;var p=cropPoint(e);
+ cropSel={left:Math.round(Math.min(dragStart.x,p.x)),top:Math.round(Math.min(dragStart.y,p.y)),right:Math.round(Math.max(dragStart.x,p.x)),bottom:Math.round(Math.max(dragStart.y,p.y))};drawCrop();
+};
+$("cropCanvas").onpointerup=$("cropCanvas").onpointercancel=function(){dragStart=null};
+
+async function processPhoto(source){
+ if(busy){clearCanvas(source);return}
+ dropPending();leituraCompletaInfo=null;leituraDuvidosa20=false;leituraCompatDuvidosa=false;releituraNumericaInfo=null;geometryTrace20=[];diagnosticoLeitura={versao:'9.1',ambiente:{agente:navigator.userAgent},arquivo:{nome:source.name||'',bytes:source.size||0},etapas:[]};$('geometryDiagnostic').hidden=true;setBusy(true);$("txt").value='';$("out").textContent='';saveState(true);
+ setStatus('Reduzindo a foto para economizar memória...');
+ try{
+  pendingFile=source instanceof HTMLCanvasElement?null:source;
+  var canvas=source instanceof HTMLCanvasElement?source:await smallCanvas(source,false);source=null;
+  diagnosticoLeitura.imagemInicial={largura:canvas.width,altura:canvas.height};
+  pendingCanvas=canvas;cropSel=detectPhotoArea(canvas);$("cropPanel").hidden=false;drawCrop();
+  setStatus('Confira a área selecionada e toque em Ler esta área.');
+ }catch(error){
+  dropPending();setStatus(error&&error.message?error.message:'Não foi possível abrir a foto.',true);
+ }finally{setBusy(false);saveState(false)}
+}
+
+async function readCrop(){
+ if(busy||!pendingCanvas)return;
+ var src=pendingCanvas,box=cropSel;
+ if(box.right-box.left<40||box.bottom-box.top<10){setStatus('Área muito pequena. Marque as duas linhas com o dedo.',true);return}
+ pendingCanvas=null;cropSel=null;$("cropPanel").hidden=true;
+ setBusy(true);saveState(true);
+ var zoom=!!pendingFile && needsPhotoZoom(src,box), high=null,highAttempted=false;
+ async function tryHighResolution(){
+  if(highAttempted||!pendingFile)return high;
+  highAttempted=true;
+  try{high=await smallCanvas(pendingFile,true)}catch(error){
+   diagnosticoLeitura.reabertura={falhou:true,mensagem:error&&error.message?error.message:String(error),alternativa:'imagem já carregada mantida'};
+   high=null;
+  }
+  return high;
+ }
+ try{
+  var readSource=src,readBox=box;
+  if(zoom){
+   setStatus("Área pequena identificada. Preparando zoom automático...");
+   await tryHighResolution();
+   if(high){
+   var sx=high.width/src.width,sy=high.height/src.height;
+   readBox={left:Math.floor(box.left*sx),top:Math.floor(box.top*sy),right:Math.min(high.width-1,Math.ceil((box.right+1)*sx)-1),bottom:Math.min(high.height-1,Math.ceil((box.bottom+1)*sy)-1)};
+   readSource=high;
+   }
+  }
+  var text=await ocr(readSource,readBox,zoom,false);
+  if(!text||!leituraCompletaInfo){
+   var previousReading=text,previousGeometry=releituraNumericaInfo,previousDoubt20=leituraDuvidosa20;
+   setStatus('Tentando processamento uniforme de compatibilidade...');
+   if(!high&&pendingFile){
+    await tryHighResolution();
+    if(high){
+    var fx=high.width/src.width,fy=high.height/src.height;
+    readSource=high;readBox={left:Math.floor(box.left*fx),top:Math.floor(box.top*fy),right:Math.min(high.width-1,Math.ceil((box.right+1)*fx)-1),bottom:Math.min(high.height-1,Math.ceil((box.bottom+1)*fy)-1)};
+    }
+   }
+   try{text=await ocr(readSource,readBox,zoom,true)}catch(fallbackError){
+    if(!previousReading)throw fallbackError;
+    diagnosticoLeitura.falhaAlternativa={mensagem:fallbackError&&fallbackError.message?fallbackError.message:String(fallbackError),leituraAnteriorPreservada:true};
+    text=previousReading;releituraNumericaInfo=previousGeometry;leituraDuvidosa20=previousDoubt20;leituraCompatDuvidosa=true;leituraCompletaInfo=null;
+   }
+   if(!leituraCompletaInfo&&previousReading){
+    var previousCheck=chk(previousReading,true),currentCheck=text?chk(text,true):null;
+    if(!currentCheck||previousCheck.errs.length+previousCheck.warns.length<currentCheck.errs.length+currentCheck.warns.length){text=previousReading;releituraNumericaInfo=previousGeometry;leituraDuvidosa20=previousDoubt20;leituraCompatDuvidosa=true}
+   }
+  }
+  if(!text)throw new Error('Leitura incerta: as tentativas não concordaram. Ajuste a área (só as duas linhas) e leia de novo, ou tire outra foto sem reflexo.');
+  $("txt").value=text;pendingFile=null;setStatus((leituraDuvidosa20||leituraCompatDuvidosa)?'Leitura não confirmada: nenhuma tentativa completa passou em todas as regras. Confira o display.':(zoom?'Zoom automático aplicado. ':'')+'Leitura feita. Confira o texto reconhecido com o display.',leituraDuvidosa20||leituraCompatDuvidosa);$("go").onclick();
+ }catch(error){
+  $("txt").value='';$("out").textContent='';
+  pendingCanvas=src;cropSel=box;src=null;$("cropPanel").hidden=false;drawCrop();
+  setStatus(error&&error.message?error.message:'Não foi possível ler a foto. Ajuste a área e tente de novo.',true);showGeometryDiagnostic();
+ }finally{if(high)clearCanvas(high);if(src)clearCanvas(src);setBusy(false);saveState(false)}
+}
+
+$("cropGo").onclick=readCrop;
+$("cropCancel").onclick=function(){dropPending();setStatus('')};
+
+$("foto").onchange=function(event){
+ var file=event.target.files[0];event.target.value='';if(!file){saveState(false);return}if(!linha||busy)return;
+ processPhoto(file);
+};
+
+['pal','lines','prod'].forEach(function(id){$(id).addEventListener('input',function(){saveState(false)});$(id).addEventListener('click',function(){if(!busy)saveState(false)})});
+try{
+ var saved=JSON.parse(localStorage.getItem(STATE_KEY)||'null');
+ if(saved&&saved.pending&&CFG[saved.linha]){
+  Array.from($("lines").children)[Object.keys(CFG).indexOf(saved.linha)].click();
+  if(saved.prod==='OM'||saved.prod==='TT')selProd(saved.prod);
+  $("pal").value=saved.pal||'';$("txt").value=saved.pending?'':(saved.txt||'');info();
+  setStatus(saved.pending?'A captura anterior foi interrompida. Selecione a foto tirada pela câmera.':'Seleção anterior restaurada. Selecione uma nova foto para conferir este lote.',!!saved.pending);
+ }
+}catch(e){}
+
+function chk(textOverride,ignoreReadingWarnings){
+ var errs=[],oks=[],warns=[],notes=[];var c=CFG[linha];
+ if(!c)return {errs:["Selecione a linha de embalagem."],oks:[],warns:[],notes:[]};
+ var pv=$("pal").value;
+ if(pv&&!/^[1-9]\d*$/.test(pv))return {errs:["O número de pallets deve ser um número inteiro maior que zero."],oks:[],warns:[],notes:[]};
+ if(pv&&+pv>c.vol/c.pal)return {errs:["Pallets acima do lote cheio ("+(c.vol/c.pal)+" pallets nesta linha)."],oks:[],warns:[],notes:[]};
+ 
+ var rawText=(typeof textOverride==='string'?textOverride:$("txt").value).toUpperCase();
+ var t=rawText.split(/\n+/).map(function(x){return x.trim()}).filter(Boolean);
+ 
+ var ib=t.findIndex(function(x){return x.indexOf("BS")>=0});
+ if(ib<1)return {errs:["Não encontrei a linha com BS e a linha do lote logo acima dela."],oks:[],warns:[],notes:[]};
+ if(t.filter(function(x){return x.indexOf("BS")>=0}).length>1)return {errs:["Há mais de uma linha com BS: não sei qual é a codificação. Marque só as duas linhas."],oks:[],warns:[],notes:[]};
+ 
+ var rawA=t[ib-1];
+ var rawB=t[ib].slice(t[ib].indexOf("BS"));
+ if(t[ib].indexOf("BS")>0)errs.push("Há caracteres antes do BS: "+t[ib]);
+
+ function normalizeField(val, expectedType, fieldName){
+  var norm=val;
+  if(expectedType==='NUM'){
+   norm=val.replace(/O/g,'0').replace(/I/g,'1');
+   if(norm!==val){
+    notes.push(fieldName+": "+val+" -> "+norm);
+   }
+  } else if(expectedType==='ALPHA'){
+   norm=val.replace(/0/g,'O').replace(/1/g,'I');
+   if(norm!==val){
+    notes.push(fieldName+": "+val+" -> "+norm);
+    if(M.indexOf(norm)<0 && fieldName.indexOf('Mês')>=0){
+     warns.push("Leitura duvidosa em "+fieldName+": lido '"+val+"'. Confira no display.");
+    }
+   }
+  }
+  return norm;
+ }
+
+ var partsA=rawA.split('-');
+ var normA_parts=[];
+ if(partsA.length===3){
+  normA_parts[0]=normalizeField(partsA[0],'NUM','Lote');
+  normA_parts[1]=normalizeField(partsA[1],'NUM','Ano do lote');
+  normA_parts[2]=normalizeField(partsA[2],'NUM','Volume');
+
+ }
+ var a=normA_parts.length===3 ? normA_parts.join('-') : rawA;
+
+ var b=rawB;
+ var matchBS=rawB.match(/^BS([A-Z0-9]{2})([A-Z0-9]{2})(.*)$/);
+ if(matchBS){
+  var siglaRaw=matchBS[1];
+  var mesRaw=matchBS[2];
+  var restRaw=matchBS[3];
+  
+  var siglaNorm=normalizeField(siglaRaw,'ALPHA','Sigla do produto');
+  var mesNorm=normalizeField(mesRaw,'NUM','Mês numérico do BS');
+  
+  restRaw=restRaw.replace(/(FAB:\s*)([A-Z0-9]{3})([\/-])([A-Z0-9]{4})/,function(m,p1,mo,sep,yr){
+   var moNorm=normalizeField(mo,'ALPHA','Mês FAB');
+   var yrNorm=normalizeField(yr,'NUM','Ano FAB');
+   return p1+moNorm+sep+yrNorm;
+  });
+  
+  restRaw=restRaw.replace(/(VAL:\s*)([A-Z0-9]{3})([\/-])([A-Z0-9]{4})/,function(m,p1,mo,sep,yr){
+   var moNorm=normalizeField(mo,'ALPHA','Mês VAL');
+   var yrNorm=normalizeField(yr,'NUM','Ano VAL');
+   return p1+moNorm+sep+yrNorm;
+  });
+
+  b="BS"+siglaNorm+mesNorm+restRaw;
+ }
+
+ var yy=new Date().getFullYear();
+ var m1=a.match(/^(\d+)-(\d+)-(\d+)$/);var anoL=null,hy=(a.match(/-/g)||[]).length;
+ if(!m1)errs.push(hy!=2?"Linha do lote deve ter 2 traços (0000-AA-VOLUME), tem "+hy+": "+a:"Linha do lote fora do formato (esperado 0000-AA-VOLUME): "+a);
+ else{
+  if(m1[1].length!=4)errs.push("Lote deve ter 4 dígitos, tem "+m1[1].length+" ("+m1[1]+").");
+  else if(m1[1][0]!="0")errs.push("Lote deve começar com 0 ("+m1[1]+").");else oks.push("Lote "+m1[1]);
+  if(m1[2].length!=2||+("20"+m1[2])!=yy)errs.push("Ano na linha 1 é "+m1[2]+", esperado "+String(yy).slice(2)+".");else oks.push("Ano "+m1[2]);
+  anoL=2000+ +m1[2];
+  var p=$("pal").value,esp=p?p*c.pal:c.vol,vol=+m1[3];
+  if(m1[3]!==String(esp)){var q=vol/c.pal;errs.push("Volume "+m1[3]+" não confere: esperado "+esp+(p?" ("+p+" pallets × "+c.pal+")":" (lote cheio)")+(Number.isInteger(q)?". O digitado equivale a "+q+" pallets.":". O digitado não é múltiplo de "+c.pal+" L (pallet)."))}
+  else oks.push("Volume "+vol+(p?" ("+p+" pallets)":" (lote cheio)"))}
+
+ var m2=b.match(/^BS([A-Z]{2})(\d*)(\s?)(.*)$/);
+ if(!m2){errs.push("Linha 2 deve começar com BS + sigla + mês (ex.: BSOM10): "+b)}
+ else{
+  var sg=(linha=="20L"||linha=="1000L")?prod:"OM";
+  if(m2[1]!=sg)errs.push("Sigla "+m2[1]+", esperado "+sg+".");else oks.push("Sigla "+sg);
+  if(m2[2].length!=2)errs.push("Mês depois de BS"+m2[1]+" deve ter 2 dígitos, tem "+m2[2].length+" ("+m2[2]+").");
+  else if(+m2[2]<1||+m2[2]>12)errs.push("Mês numérico inválido: "+m2[2]);
+  if(m2[3]!=" ")errs.push("Falta o espaço entre o mês e FAB.");
+  var f=b.match(/FAB:([A-Z]{3})\/(\d{4})/),v=b.match(/VAL:([A-Z]{3})\/(\d{4})/),fd=!f&&b.match(/FAB:([A-Z]{3})-(\d{4})/),vd=!v&&b.match(/VAL:([A-Z]{3})-(\d{4})/);
+  if(fd){warns.push("FAB: li um traço (-) depois de "+fd[1]+", mas o padrão é barra (/). Olhe o display: se for traço mesmo, está errado.");f=fd}
+  if(vd){warns.push("VAL: li um traço (-) depois de "+vd[1]+", mas o padrão é barra (/). Olhe o display: se for traço mesmo, está errado.");v=vd}
+  if(!/FAB:/.test(b))errs.push("Falta FAB: (com dois pontos).");
+  else if(!f)errs.push("FAB deve ser FAB:MMM/AAAA (ex.: FAB:OUT/2026). Li: "+((b.match(/FAB:\S*/)||[""])[0]));
+  else{
+   if(M.indexOf(f[1])<0)errs.push("Mês de fabricação inválido: "+f[1]);
+   else if(m2[2].length==2&&M.indexOf(f[1])+1!=+m2[2])errs.push("Mês numérico "+m2[2]+" não bate com FAB "+f[1]+" (seria "+(M[+m2[2]-1]||"?")+").");else oks.push("Mês "+m2[2]+" = "+f[1]);
+   if(anoL&&+f[2]!=anoL)errs.push("Ano de fabricação "+f[2]+" não bate com o ano do lote ("+anoL+").")}
+  if(f&&v&&!/FAB:[A-Z]{3}[\/-]\d{4} VAL:/.test(b))errs.push("VAL deve ficar na mesma linha, com um espaço depois da data de fabricação.");
+  if(!/VAL:/.test(b))errs.push("Falta VAL: (com dois pontos).");
+  else if(!v)errs.push("VAL deve ser VAL:MMM/AAAA. Li: "+((b.match(/VAL:\S*/)||[""])[0]));
+  else if(M.indexOf(v[1])<0)errs.push("Mês da validade inválido: "+v[1]);
+  else{
+   if(m2[2].length==2&&M.indexOf(v[1])+1!=+m2[2])errs.push("Mês da validade "+v[1]+" não bate com o mês "+m2[2]+" depois do código (seria "+(M[+m2[2]-1]||"?")+").");
+   if(f&&M.indexOf(f[1])>=0&&v[1]!=f[1])errs.push("Mês da validade ("+v[1]+") é diferente do mês de fabricação ("+f[1]+").");
+   if(f&&+v[2]-+f[2]!=5)errs.push("Validade deve ser 5 anos após a fabricação ("+(+f[2]+5)+"), está "+v[2]+".");
+   else if(f)oks.push("Validade "+v[1]+"/"+v[2])}}
+ if(releituraNumericaInfo&&linha==='20L'){notes.push('Análise geométrica confirmou o 7 (confirmado em '+releituraNumericaInfo.confirmacoes+' varreduras): '+releituraNumericaInfo.original+' -> '+releituraNumericaInfo.novo); }
+ if(!ignoreReadingWarnings&&leituraCompatDuvidosa)warns.push('Nenhuma tentativa leu as duas linhas completas sem erros ou avisos. Confira o texto no display.');
+ if(!ignoreReadingWarnings&&leituraDuvidosa20&&linha==='20L')warns.push('Leitura incerta: as tentativas não concordaram. Confira todos os caracteres no display.');
+ if(!errs.length&&!/^0\d{3}-\d{2}-[1-9]\d*$/.test(a))errs.push("A linha do lote tem caracteres a mais, a menos ou fora do padrão: "+a);
+ if(!errs.length&&!/^BS[A-Z]{2}\d{2} FAB:[A-Z]{3}[\/-]\d{4} VAL:[A-Z]{3}[\/-]\d{4}(?: \d{1,3})?$/.test(b))errs.push("A linha do BS tem caracteres a mais, a menos ou fora do padrão: "+b);
+ return{errs:errs,oks:oks,warns:warns,notes:notes}}
+
+$("go").onclick=function(){var r=chk(),o=$("out");
+ o.innerHTML="";var d=document.createElement("div");
+ if(leituraCompatDuvidosa){d.className="res wn";d.style.fontSize="20px";d.textContent="⚠️ LEITURA NÃO CONFIRMADA";var uncertainList=document.createElement('ul');r.errs.concat(r.warns).forEach(function(t){var li=document.createElement('li');li.textContent=t;uncertainList.appendChild(li)});d.appendChild(uncertainList)}
+ else if(r.errs.length){d.className="res er";d.style.fontSize="20px";d.textContent="❌ CODIFICAÇÃO ERRADA ("+r.errs.length+" problema"+(r.errs.length>1?"s":"")+")";var u=document.createElement("ul");r.errs.forEach(function(e){var li=document.createElement("li");li.textContent=e;u.appendChild(li)});d.appendChild(u);if(r.warns.length){var w=document.createElement('ul');r.warns.forEach(function(e){var li=document.createElement('li');li.textContent=e;w.appendChild(li)});d.appendChild(w)}}
+ else if(r.warns&&r.warns.length){d.className="res wn";d.style.fontSize="20px";d.textContent="⚠️ CONFERIR NO DISPLAY";var u2=document.createElement("ul");r.warns.forEach(function(e){var li=document.createElement("li");li.textContent=e;u2.appendChild(li)});d.appendChild(u2)}
+ else{d.className="res ok";d.textContent="✅ Codificação OK: "+r.oks.join(" · ")}
+ if(r.notes&&r.notes.length){var nn=document.createElement("small");nn.style.cssText="display:block;margin-top:8px;font-weight:500";nn.textContent="Ajustes de leitura: "+r.notes.join("; ");d.appendChild(nn)}
+ o.appendChild(d);showGeometryDiagnostic()};
+
+function linhasCanvas(ctx,text,max){
+ var out=[];
+ String(text).split(/\r?\n/).forEach(function(line){
+  if(!line){out.push('');return}
+  var words=line.split(/\s+/), current='';
+  words.forEach(function(word){
+   var next=current?current+' '+word:word;
+   if(ctx.measureText(next).width<=max){current=next;return}
+   if(current){out.push(current);current=''}
+   while(word&&ctx.measureText(word).width>max){var n=1;while(n<word.length&&ctx.measureText(word.slice(0,n+1)).width<=max)n++;out.push(word.slice(0,n));word=word.slice(n)}
+   current=word;
+  });
+  if(current)out.push(current);
+ });
+ return out;
+}
+$('saveRegistro').onclick=function(){
+ if(busy)return;
+ if(!linha||!$('txt').value.trim()){$('registroPanel').hidden=false;$('registroPreview').hidden=true;$('registroStatus').textContent='Selecione a linha e faça a leitura antes de salvar o registro.';return}
+ $('go').onclick();
+ var r=chk(),tipo=leituraCompatDuvidosa?'wn':r.errs.length?'er':r.warns.length?'wn':'ok';
+ var titulo=leituraCompatDuvidosa?'LEITURA NÃO CONFIRMADA':tipo==='er'?'CODIFICAÇÃO ERRADA':tipo==='wn'?'CONFERIR NO DISPLAY':'CODIFICAÇÃO OK';
+ var detalhes=leituraCompatDuvidosa?r.errs.concat(r.warns):tipo==='er'?r.errs.concat(r.warns):tipo==='wn'?r.warns:[r.oks.join(' · ')];
+ if(r.notes&&r.notes.length)detalhes=detalhes.concat(['Ajustes de leitura: '+r.notes.join('; ')]);
+ var cv=document.createElement('canvas'),c=cv.getContext('2d'),W=1200,pad=64,content=1072;
+ c.font='30px monospace';var reading=linhasCanvas(c,$('txt').value.toUpperCase(),content-56);
+ c.font='27px system-ui, sans-serif';var rows=[];detalhes.forEach(function(t){linhasCanvas(c,t,content-56).forEach(function(x){rows.push(x)})});
+ var hRead=Math.max(112,reading.length*42+52),hResult=110+rows.length*39;
+ cv.width=W;cv.height=310+hRead+hResult+70;c=cv.getContext('2d');
+ c.fillStyle='#f0f5f7';c.fillRect(0,0,W,cv.height);c.fillStyle='#153b50';c.fillRect(0,0,W,145);
+ c.fillStyle='#ffffff';c.font='bold 39px system-ui, sans-serif';c.fillText('Registro da verificação de lote',pad,63);
+ c.font='24px system-ui, sans-serif';c.fillText(new Date().toLocaleString('pt-BR')+'  |  '+linha.replace('1000L','1.000 L')+((linha==='20L'||linha==='1000L')?'  |  '+prod:''),pad,110);
+ var y=188;c.fillStyle='#314d5f';c.font='bold 23px system-ui, sans-serif';c.fillText('TEXTO LIDO',pad,y);y+=22;
+ c.fillStyle='#ffffff';c.fillRect(pad,y,content,hRead);c.fillStyle='#142b3a';c.font='30px monospace';reading.forEach(function(line,i){c.fillText(line,pad+28,y+48+i*42)});y+=hRead+46;
+ c.fillStyle='#314d5f';c.font='bold 23px system-ui, sans-serif';c.fillText('RESULTADO DA VERIFICAÇÃO',pad,y);y+=22;
+ c.fillStyle=tipo==='ok'?'#e3f7eb':tipo==='wn'?'#fff2c7':'#fce9e8';c.fillRect(pad,y,content,hResult);
+ c.fillStyle=tipo==='ok'?'#116a43':tipo==='wn'?'#785000':'#ae3434';c.font='bold 32px system-ui, sans-serif';c.fillText((tipo==='ok'?'✓  ':tipo==='wn'?'!  ':'✕  ')+titulo,pad+28,y+51);
+ c.font='27px system-ui, sans-serif';rows.forEach(function(line,i){c.fillText(line,pad+28,y+95+i*39)});
+ var url=cv.toDataURL('image/png');$('registroPreview').src=url;$('registroPreview').hidden=false;$('registroPanel').hidden=false;
+ $('registroStatus').textContent='Registro gerado. Para anexar, salve ou compartilhe a imagem.';
+ var a=document.createElement('a');a.href=url;a.download='registro-verificacao-lote.png';document.body.appendChild(a);a.click();a.remove();
+};
+
+
+function showGeometryDiagnostic(){
+ var panel=$('geometryDiagnostic');if(!panel)return;
+ panel.hidden=!diagnosticoLeitura.etapas.length;
+ if(panel.hidden)return;
+ var approved=leituraCompletaInfo?(leituraCompletaInfo.metodo==='consenso-geometrico-20l'?' Aprovado por consenso dos campos e geometria: lote '+leituraCompletaInfo.confirmacoesLote+' leituras, BS '+leituraCompletaInfo.confirmacoesBS+' leituras, 7 confirmado '+leituraCompletaInfo.confirmacoesGeometria+' vezes.':' Leitura completa aprovada: tentativa '+leituraCompletaInfo.tentativa+' do modo '+leituraCompletaInfo.modo+'.'):' Nenhuma leitura aprovada.';
+ var geometryByStage=diagnosticoLeitura.etapas.map(function(s){var traces=s.geometria||[];return s.modo+': '+traces.filter(function(t){return t.etapa==='geometria confirmou 7'}).length+' confirmações em '+traces.length+' análises'}).join('; ');
+ $('geometrySummary').textContent='Versão 9.1. Processamentos: '+diagnosticoLeitura.etapas.map(function(s){return s.modo+' ('+s.preparada.largura+' × '+s.preparada.altura+')'}).join('; ')+'.'+approved+(linha==='20L'?' Geometria por processamento: '+geometryByStage+'.':'');
+}
+$('saveDiagnostic').onclick=function(){
+ var report={versao:'9.1',diagnostico:diagnosticoLeitura,leituraCompleta:leituraCompletaInfo,data:new Date().toISOString(),linha:linha,produto:prod,pallets:$('pal').value,texto:$('txt').value,geometria:diagnosticoLeitura.etapas.reduce(function(all,s){return all.concat(s.geometria||[])},[]),correcao:releituraNumericaInfo,resultado:chk()};
+ var blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='diagnostico-verificador-9-1.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},60000);
+};
+
+</script>
+</body>
+</html>
