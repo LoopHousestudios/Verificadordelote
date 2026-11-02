@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Verificador de lote · 9.2</title>
+<title>Verificador de lote · 9.3</title>
 <meta name="apple-mobile-web-app-title" content="Verificador de lote">
 <meta name="theme-color" content="#15334c">
 <link rel="apple-touch-icon" href="icone-lote.png">
@@ -16,7 +16,7 @@
 </head>
 <body>
 <main>
-<header class="hero"><div class="eyebrow">Conferência de envase</div><h1>Verificador de<br>virada de lote</h1><p>Selecione a linha e confira a codificação da embalagem.</p><p style="font-size:12px;margin-top:12px">Versão 9.2 · validação por leitura completa</p></header>
+<header class="hero"><div class="eyebrow">Conferência de envase</div><h1>Verificador de<br>virada de lote</h1><p>Selecione a linha e confira a codificação da embalagem.</p><p style="font-size:12px;margin-top:12px">Versão 9.3 · validação por leitura completa</p></header>
 <section class="card">
 
 <h2>Selecione a linha de embalagem</h2>
@@ -191,60 +191,94 @@ function detectBlueBand(source){
 // Detection uses a bounded analysis canvas; all returned coordinates refer to source.
 // A colour region is only a search window. Require two separate bright text rows.
 function detectPhotoArea(source){
- var cv=document.createElement('canvas'),scale=Math.min(1,800/source.width);
- cv.width=Math.max(1,Math.round(source.width*scale));cv.height=Math.max(1,Math.round(source.height*scale));
- var cx=cv.getContext('2d');cx.drawImage(source,0,0,cv.width,cv.height);
- var W=cv.width,H=cv.height,p=cx.getImageData(0,0,W,H).data,rows=new Uint32Array(H),x,y;
- function blue(i){return p[i+2]>65&&p[i+2]>p[i]+10&&p[i+2]>p[i+1]+5&&Math.max(p[i],p[i+1],p[i+2])-Math.min(p[i],p[i+1],p[i+2])>25}
- for(y=0;y<H;y++)for(x=0;x<W;x++)if(blue((y*W+x)*4))rows[y]++;
- var runs=[],start=-1;
- for(y=0;y<=H;y++){
-  var active=y<H&&rows[y]>=W*.14;
-  if(active&&start<0)start=y;
-  if(!active&&start>=0){if(y-start>=8)runs.push({top:start,bottom:y-1});start=-1}
- }
- var best=null,bestScore=-Infinity;
- runs.forEach(function(band){
-  var left=W,right=-1,sum=0,n=0;
-  for(var yy=band.top;yy<=band.bottom;yy++)for(var xx=0;xx<W;xx++){
-   var i=(yy*W+xx)*4;if(blue(i)){left=Math.min(left,xx);right=Math.max(right,xx);sum+=(p[i]+p[i+1]+p[i+2])/3;n++}
-  }
-  var bw=right-left+1,bh=band.bottom-band.top+1;
-  if(bw<60||bh<12||!n)return;
-  var threshold=Math.max(115,sum/n+28),lines=[],run=null;
-  // Menus are usually above the preview. Search lower half of a tall display,
-  // or the entire band when it already has the shape of a two-line strip.
-  var from=bh>bw*.28?Math.floor(band.top+bh*.5):band.top;
-  for(var yy=from;yy<=band.bottom+1;yy++){
-   var count=0,l=right,r=left;
-   if(yy<=band.bottom)for(var xx=left+2;xx<right-2;xx++){
-    var i=(yy*W+xx)*4,hi=Math.max(p[i],p[i+1],p[i+2]),lo=Math.min(p[i],p[i+1],p[i+2]);
-    if((p[i]+p[i+1]+p[i+2])/3>threshold&&hi-lo<95){count++;l=Math.min(l,xx);r=Math.max(r,xx)}
-   }
-   if(count>=Math.max(4,bw*.022)){
-    if(!run)run={top:yy,bottom:yy,left:l,right:r};
-    run.bottom=yy;run.left=Math.min(run.left,l);run.right=Math.max(run.right,r);
-   }else if(run){if(run.bottom-run.top+1>=2)lines.push(run);run=null}
-  }
-  for(var j=0;j<lines.length-1;j++){
-   var a=lines[j],b=lines[j+1],ah=a.bottom-a.top+1,bh2=b.bottom-b.top+1,gap=b.top-a.bottom-1;
-   var tw=Math.max(a.right,b.right)-Math.min(a.left,b.left)+1,th=b.bottom-a.top+1;
-   if(gap<1||gap>Math.max(ah,bh2)*2.5||Math.max(ah,bh2)>Math.min(ah,bh2)*2.5||tw<Math.max(60,bw*.25)||tw/th<2.8||a.right-a.left<bw*.12||b.right-b.left<bw*.2)continue;
-   var score=tw+100*(b.bottom-band.top)/(band.bottom-band.top+1);
-   if(score>bestScore){
-    var pad=Math.max(4,Math.round(Math.max(ah,bh2)*.6));
-    best={left:Math.max(0,Math.min(a.left,b.left)-pad),right:Math.min(W-1,Math.max(a.right,b.right)+pad),top:Math.max(0,a.top-pad),bottom:Math.min(H-1,b.bottom+pad)};bestScore=score;
-   }
-  }
- });
- clearCanvas(cv);
- if(best){
-  var sx=source.width/W,sy=source.height/H;
-  return {left:Math.floor(best.left*sx),top:Math.floor(best.top*sy),right:Math.min(source.width-1,Math.ceil((best.right+1)*sx)-1),bottom:Math.min(source.height-1,Math.ceil((best.bottom+1)*sy)-1),automatic:true};
- }
- // Do not present the whole screen as if two lines had been found.
+ var selected=messageArea(source);if(selected)return selected;
  var fallback=detectBlueBand(source)||detectBox(source);fallback.automatic=false;return fallback;
 }
+
+// Local contrast and projection alignment use image pixels only; no expected codes.
+function analyzeMessage(source,box){
+ var sc=Math.min(1,1000/(box.right-box.left+1)),W=Math.max(1,Math.round((box.right-box.left+1)*sc)),H=Math.max(1,Math.round((box.bottom-box.top+1)*sc));
+ if(W<100||H<25)return null;
+ var cv=document.createElement('canvas');cv.width=W;cv.height=H;var cx=cv.getContext('2d');cx.drawImage(source,box.left,box.top,box.right-box.left+1,box.bottom-box.top+1,0,0,W,H);
+ var rgba=cx.getImageData(0,0,W,H).data,g=new Uint8Array(W*H),sat=new Float64Array((W+1)*(H+1)),stride=W+1;
+ for(var y=0;y<H;y++){var sum=0;for(var x=0;x<W;x++){var i=y*W+x;g[i]=Math.min(rgba[i*4],rgba[i*4+1]);sum+=g[i];sat[(y+1)*stride+x+1]=sat[y*stride+x+1]+sum}}
+ var radius=Math.max(7,Math.round(W*.014)),xs=[],ys=[];
+ for(y=0;y<H;y++)for(x=0;x<W;x++){var x0=Math.max(0,x-radius),x1=Math.min(W,x+radius+1),y0=Math.max(0,y-radius),y1=Math.min(H,y+radius+1),mean=(sat[y1*stride+x1]-sat[y0*stride+x1]-sat[y1*stride+x0]+sat[y0*stride+x0])/((x1-x0)*(y1-y0));if(g[y*W+x]>Math.max(45,mean+10)){xs.push(x);ys.push(y)}}
+ var margin=Math.ceil(W*.15)+2,OH=H+margin*2,bestSlope=0,best=-1;
+ for(var q=-70;q<=70;q++){var slope=q*.002,counts=new Uint32Array(OH);for(i=0;i<xs.length;i++){var row=Math.round(ys[i]-slope*xs[i])+margin;if(row>=0&&row<OH)counts[row]++}var score=0;for(y=0;y<OH;y++)score+=counts[y]*counts[y];if(score>best){best=score;bestSlope=slope}}
+ var mask=new Uint8Array(W*OH);for(i=0;i<xs.length;i++){var yy=Math.round(ys[i]-bestSlope*xs[i])+margin;if(yy>=0&&yy<OH)mask[yy*W+xs[i]]=1}
+ // Remove connected frame edges and isolated sensor/compression specks.
+ var seen=new Uint8Array(mask.length),queue=new Int32Array(mask.length),clean=new Uint8Array(mask.length);
+ for(var seed=0;seed<mask.length;seed++)if(mask[seed]&&!seen[seed]){
+  var head=0,tail=1,l=W,r=0,t=OH,b=0;queue[0]=seed;seen[seed]=1;
+  while(head<tail){var at=queue[head++],py=Math.floor(at/W),px=at%W;l=Math.min(l,px);r=Math.max(r,px);t=Math.min(t,py);b=Math.max(b,py);for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){var nx=px+dx,ny=py+dy,j=ny*W+nx;if(nx>=0&&nx<W&&ny>=0&&ny<OH&&mask[j]&&!seen[j]){seen[j]=1;queue[tail++]=j}}}
+  if(r-l>W*.55||b-t>Math.min(H*.6,W*.055)||tail<6||b-t<Math.max(3,W*.006))continue;
+  for(i=0;i<tail;i++)clean[queue[i]]=1;
+ }
+ var rows=[],run=null,threshold=Math.max(5,W*.013);
+ for(y=0;y<=OH;y++){var n=0,l=W,r=0;if(y<OH)for(x=0;x<W;x++)if(clean[y*W+x]){n++;l=Math.min(l,x);r=Math.max(r,x)}if(n>=threshold){if(!run)run={top:y,bottom:y,left:l,right:r};run.bottom=y;run.left=Math.min(run.left,l);run.right=Math.max(run.right,r)}else if(run){if(run.bottom-run.top>=3)rows.push(run);run=null}}
+ var pair=null,score=-1;
+ for(i=0;i<rows.length-1;i++){var a=rows[i],b=rows[i+1],ah=a.bottom-a.top+1,bh=b.bottom-b.top+1,aw=a.right-a.left+1,bw=b.right-b.left+1,gap=b.top-a.bottom-1;
+  if(Math.max(ah,bh)>Math.min(ah,bh)*1.8||gap<0||gap>Math.max(ah,bh)*.9||Math.abs(a.left-b.left)>W*.065||aw<W*.15||bw<W*.38||aw>bw*.88)continue;
+  if(bw>score){pair=[a,b];score=bw}
+ }
+ if(!pair)return null;
+ return {width:W,height:H,margin:margin,slope:bestSlope,scale:sc,box:box,rows:pair};
+}
+function messageArea(source){
+ var region=detectBlueBand(source)||detectBox(source),a=analyzeMessage(source,region);if(!a)return null;
+ var x0=Math.min(a.rows[0].left,a.rows[1].left),x1=Math.max(a.rows[0].right,a.rows[1].right),pad=Math.max(4,(a.rows[1].bottom-a.rows[0].top)*.08),top=Infinity,bottom=-Infinity;
+ a.rows.forEach(function(row){[x0,x1].forEach(function(x){top=Math.min(top,row.top-a.margin+a.slope*x);bottom=Math.max(bottom,row.bottom-a.margin+a.slope*x)})});
+ return {left:Math.max(0,Math.floor(region.left+(x0-pad)/a.scale)),right:Math.min(source.width-1,Math.ceil(region.left+(x1+pad)/a.scale)),top:Math.max(0,Math.floor(region.top+(top-pad)/a.scale)),bottom:Math.min(source.height-1,Math.ceil(region.top+(bottom+pad)/a.scale)),automatic:true};
+}
+function alignedLines(source,box){
+ var a=analyzeMessage(source,box);if(!a)return null;
+ var W=box.right-box.left+1,H=box.bottom-box.top+1,margin=Math.ceil(W*.15)+4,cv=document.createElement('canvas');cv.width=W;cv.height=H+margin*2;var c=cv.getContext('2d');c.fillStyle='rgb(25,25,150)';c.fillRect(0,0,cv.width,cv.height);c.setTransform(1,-a.slope,0,1,0,margin);c.drawImage(source,box.left,box.top,W,H,0,0,W,H);
+ var lines=a.rows.map(function(row){var pad=4,left=Math.max(0,Math.floor(row.left/a.scale)-pad),right=Math.min(W-1,Math.ceil(row.right/a.scale)+pad),top=Math.floor((row.top-a.margin)/a.scale)+margin-pad,bottom=Math.ceil((row.bottom-a.margin)/a.scale)+margin+pad;var out=document.createElement('canvas');out.width=right-left+1;out.height=bottom-top+1;out.getContext('2d').drawImage(cv,left,top,out.width,out.height,0,0,out.width,out.height);return out});
+ clearCanvas(cv);return {lines:lines,slope:a.slope};
+}
+function lineBinary(canvas,adaptive,level,smooth){
+ var W=canvas.width,H=canvas.height,p=canvas.getContext('2d').getImageData(0,0,W,H).data,g=new Float32Array(W*H),s=new Float32Array(W*H);
+ for(var i=0;i<g.length;i++)g[i]=Math.min(p[i*4],p[i*4+1]);
+ if(smooth){for(var y=0;y<H;y++)for(var x=0;x<W;x++){var total=0;for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){var weight=(dx?1:2)*(dy?1:2);total+=weight*g[Math.max(0,Math.min(H-1,y+dy))*W+Math.max(0,Math.min(W-1,x+dx))]}s[y*W+x]=total/16}g=s}
+ var stride=W+1,sat=new Float64Array((W+1)*(H+1));
+ if(adaptive)for(y=0;y<H;y++){var sum=0;for(x=0;x<W;x++){sum+=g[y*W+x];sat[(y+1)*stride+x+1]=sat[y*stride+x+1]+sum}}
+ var low=document.createElement('canvas');low.width=W;low.height=H;var c=low.getContext('2d'),d=c.createImageData(W,H);
+ for(y=0;y<H;y++)for(x=0;x<W;x++){var threshold=level;if(adaptive===true){var rad=12,x0=Math.max(0,x-rad),x1=Math.min(W,x+rad+1),y0=Math.max(0,y-rad),y1=Math.min(H,y+rad+1);threshold=(sat[y1*stride+x1]-sat[y0*stride+x1]-sat[y1*stride+x0]+sat[y0*stride+x0])/((x1-x0)*(y1-y0))+level}var at=(y*W+x)*4,v=adaptive==='gray'?255-Math.max(0,Math.min(255,(g[y*W+x]-20)*3)):g[y*W+x]>threshold?0:255;d.data[at]=d.data[at+1]=d.data[at+2]=v;d.data[at+3]=255}
+ c.putImageData(d,0,0);var out=document.createElement('canvas');out.width=W*3+64;out.height=H*3+64;var oc=out.getContext('2d');oc.fillStyle='white';oc.fillRect(0,0,out.width,out.height);oc.imageSmoothingEnabled=true;oc.imageSmoothingQuality='high';oc.drawImage(low,32,32,W*3,H*3);clearCanvas(low);return out;
+}
+function splitLineWords(canvas){
+ var W=canvas.width,H=canvas.height,p=canvas.getContext('2d').getImageData(0,0,W,H).data,g=new Float32Array(W*H),sat=new Float64Array((W+1)*(H+1)),stride=W+1;
+ for(var y=0;y<H;y++){var sum=0;for(var x=0;x<W;x++){var i=y*W+x;g[i]=Math.min(p[i*4],p[i*4+1]);sum+=g[i];sat[(y+1)*stride+x+1]=sat[y*stride+x+1]+sum}}
+ var cols=new Uint16Array(W);
+ for(y=0;y<H;y++)for(x=0;x<W;x++){var r=12,x0=Math.max(0,x-r),x1=Math.min(W,x+r+1),y0=Math.max(0,y-r),y1=Math.min(H,y+r+1),mean=(sat[y1*stride+x1]-sat[y0*stride+x1]-sat[y1*stride+x0]+sat[y0*stride+x0])/((x1-x0)*(y1-y0));if(g[y*W+x]>Math.max(45,mean+8))cols[x]++}
+ var groups=[],start=-1,last=0,gap=0;
+ for(x=0;x<=W;x++){if(x<W&&cols[x]>=3){if(start<0)start=x;last=x;gap=0}else if(start>=0){gap++;if(x===W||gap>=H*.45){groups.push({left:Math.max(0,start-3),right:Math.min(W-1,last+3)});start=-1}}}
+ if(groups.length<3||groups.length>7)return null;
+ return groups.map(function(b){var c=document.createElement('canvas');c.width=b.right-b.left+1;c.height=H;c.getContext('2d').drawImage(canvas,b.left,0,c.width,H,0,0,c.width,H);return c});
+}
+async function ocrAligned(source,box){
+ var prepared=alignedLines(source,box);if(!prepared)return '';
+ var worker=null,stage={modo:'linhas-alinhadas',fonte:{largura:source.width,altura:source.height},area:box,alinhamento:prepared.slope,preparada:{largura:prepared.lines[1].width,altura:prepared.lines[0].height+prepared.lines[1].height},tentativas:[],geometria:[]};diagnosticoLeitura.etapas.push(stage);
+ var bestText='',bestErrors=Infinity;
+ var preview=document.createElement('canvas');preview.width=Math.max(prepared.lines[0].width,prepared.lines[1].width);preview.height=prepared.lines[0].height+prepared.lines[1].height+8;var pc=preview.getContext('2d');pc.fillStyle='rgb(25,25,150)';pc.fillRect(0,0,preview.width,preview.height);pc.drawImage(prepared.lines[0],0,0);pc.drawImage(prepared.lines[1],0,prepared.lines[0].height+8);showOCRPreview(preview,null,true);$('ocrPreviewLabel').textContent='Linhas alinhadas usadas na leitura (antes do contraste):';clearCanvas(preview);
+ try{
+  await loadOCR();worker=await Tesseract.createWorker('eng',1,{legacyCore:false,legacyLang:false});await worker.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/: '});
+  var variants=[[80,false,7,true],[80,false,4,true],[80,false,10,true],[80,false,7,false],[70,false,7,true],[90,false,7,true],[80,false,80,false],[90,false,90,false]];
+  for(var n=0;n<variants.length;n++){
+   setStatus('Leitura alinhada: tentativa '+(n+1)+' de '+variants.length+'...');var v=variants[n],a=lineBinary(prepared.lines[0],false,v[0],v[1]),b=lineBinary(prepared.lines[1],n!==6&&n!==7,v[2],v[3]);
+   var ra=null,rb=null,wordText=null;try{ra=await worker.recognize(a,{}, {text:true,blocks:true});
+   if(n<2){var words=splitLineWords(prepared.lines[1]);if(words){var parts=[],rawParts=[];try{for(var wi=0;wi<words.length;wi++){var wc=lineBinary(words[wi],'gray',0,n===0),wr;try{wr=await worker.recognize(wc,{}, {text:true,blocks:true})}finally{clearCanvas(wc)}parts.push(fixSeparators(wr.data).trim());rawParts.push(wr.data.text.trim())}}finally{words.forEach(clearCanvas)}wordText=parts.filter(Boolean).join(' ');rb={data:{text:rawParts.join(' ')}}}}
+   if(!rb)rb=await worker.recognize(b,{}, {text:true,blocks:true})}finally{clearCanvas(a);clearCanvas(b)}
+   var raw=ra.data.text.trim().replace(/\s+/g,'')+'\n'+(wordText!==null?wordText:fixSeparators(rb.data).trim()).replace(/\s*\/\s*/g,'/'),cand=readLines(raw),full=validateCompleteReading(cand);
+   stage.tentativas.push({texto:ra.data.text+'\n'+rb.data.text,extraido:cand,validacao:full?full.resultado:null,contraste:v});
+   if(full){var errors=full.resultado.errs.length+full.resultado.warns.length;if(errors<bestErrors){bestErrors=errors;bestText=full.texto}}
+   if(full&&full.valida){leituraCompatDuvidosa=false;leituraDuvidosa20=false;releituraNumericaInfo=null;leituraCompletaInfo={modo:stage.modo,tentativa:n+1,criterio:'duas linhas da mesma foto alinhadas e lidas separadamente; todas as regras aprovadas',texto:full.texto};stage.aprovacao=leituraCompletaInfo;stage.resultado=full.texto;return full.texto}
+  }
+  stage.resultado=bestText;return bestText;
+ }finally{prepared.lines.forEach(clearCanvas);if(worker)try{await worker.terminate()}catch(e){}}
+}
+
 function needsPhotoZoom(source,box){
  return (box.right-box.left+1)/source.width<.65||(box.bottom-box.top+1)/source.height<.35;
 }
@@ -269,7 +303,7 @@ function fixSeparators(data){
  try{
   var out=[];
   (data.blocks||[]).forEach(function(bl){(bl.paragraphs||[]).forEach(function(pa){(pa.lines||[]).forEach(function(li){
-   var ws=li.words||[],sy=[];
+   if(!/FAB|VAL/i.test(li.text||'')){out.push(li.text||'');return}var ws=li.words||[],sy=[];
    ws.forEach(function(w){(w.symbols||[]).forEach(function(s){sy.push(s)})});
    if(!sy.length){out.push(li.text||'');return}
    var hs=sy.filter(function(s){return /[A-Z0-9]/.test(s.text)}).map(function(s){return s.bbox.y1-s.bbox.y0}).sort(function(p,q){return p-q});
@@ -364,7 +398,7 @@ function validateCompleteReading(candidate){
  return {texto:text,resultado:result,valida:!result.errs.length&&!result.warns.length};
 }
 
-var diagnosticoLeitura={versao:'9.2',ambiente:{agente:navigator.userAgent},etapas:[]},leituraCompatDuvidosa=false;
+var diagnosticoLeitura={versao:'9.3',ambiente:{agente:navigator.userAgent},etapas:[]},leituraCompatDuvidosa=false;
 function pixelFingerprint(bytes){var h=2166136261;for(var i=0;i<bytes.length;i++){h^=bytes[i];h=Math.imul(h,16777619)}return ('00000000'+(h>>>0).toString(16)).slice(-8)}
 // Fixed pixel resampling for the compatibility fallback: identical input bytes
 // and dimensions yield identical output; image decoding can still vary.
@@ -532,7 +566,7 @@ function drawCrop(){
  var sc=Math.min(1,720/src.width);cv.width=Math.round(src.width*sc);cv.height=Math.round(src.height*sc);cv.dataset.s=sc;
  var c=cv.getContext('2d');c.drawImage(src,0,0,cv.width,cv.height);
  var x=cropSel.left*sc,y=cropSel.top*sc,w=(cropSel.right-cropSel.left+1)*sc,h=(cropSel.bottom-cropSel.top+1)*sc;
- c.fillStyle='rgba(0,0,0,.5)';c.fillRect(0,0,cv.width,y);c.fillRect(0,y+h,cv.width,cv.height-y-h);c.fillRect(0,y,x,h);c.fillRect(x+w,y,cv.width-x-w,h);
+
  c.strokeStyle='#ffd400';c.lineWidth=3;c.strokeRect(x,y,w,h);
  showOCRPreview(src,cropSel,false);
  $('cropHint').textContent=cropSel.automatic?'Sugestão automática: confira se as duas linhas estão completas.':'Seleção para conferir: arraste do canto superior esquerdo ao inferior direito das duas linhas. Se a foto estiver de lado, use Girar foto.';
@@ -569,7 +603,7 @@ $('cropRotate').onclick=function(){
 
 async function processPhoto(source){
  if(busy){clearCanvas(source);return}
- dropPending();leituraCompletaInfo=null;leituraDuvidosa20=false;leituraCompatDuvidosa=false;releituraNumericaInfo=null;geometryTrace20=[];diagnosticoLeitura={versao:'9.2',ambiente:{agente:navigator.userAgent},arquivo:{nome:source.name||'',bytes:source.size||0},etapas:[]};$('geometryDiagnostic').hidden=true;setBusy(true);$("txt").value='';$("out").textContent='';saveState(true);
+ dropPending();leituraCompletaInfo=null;leituraDuvidosa20=false;leituraCompatDuvidosa=false;releituraNumericaInfo=null;geometryTrace20=[];diagnosticoLeitura={versao:'9.3',ambiente:{agente:navigator.userAgent},arquivo:{nome:source.name||'',bytes:source.size||0},etapas:[]};$('geometryDiagnostic').hidden=true;setBusy(true);$("txt").value='';$("out").textContent='';saveState(true);
  setStatus('Reduzindo a foto para economizar memória...');
  try{
   pendingFile=source instanceof HTMLCanvasElement?null:source;
@@ -584,12 +618,17 @@ async function processPhoto(source){
 
 async function readCrop(){
  if(busy||!pendingCanvas)return;
- var src=pendingCanvas,box=Object.assign({},cropSel);
+ var src=pendingCanvas,box=Object.assign({},cropSel),selectionBox=Object.assign({},cropSel);
  diagnosticoLeitura.selecao={origem:box.automatic?'automatica':'manual-ou-area-ampla',area:Object.assign({},box),rotacao:pendingRotation};
  if(box.right-box.left<40||box.bottom-box.top<10){setStatus('Área muito pequena. Marque as duas linhas com o dedo.',true);return}
+ if(box.automatic){
+  var legacy=detectBox(src),band=detectBlueBand(src);
+  if(band&&legacy.bottom-legacy.top+1>(band.bottom-band.top+1)*1.3)legacy=band;
+  legacy.automatic=true;diagnosticoLeitura.areaComplementarAutomatica=legacy;box=legacy;
+ }
  pendingCanvas=null;cropSel=null;$("cropPanel").hidden=true;
  setBusy(true);saveState(true);
- var zoom=!!pendingFile && needsPhotoZoom(src,box), high=null,highAttempted=false;
+ var zoom=!!pendingFile && (box.automatic?(box.right-box.left+1)/src.width<.65:needsPhotoZoom(src,box)), high=null,highAttempted=false;
  async function tryHighResolution(){
   if(highAttempted||!pendingFile)return high;
   highAttempted=true;
@@ -634,11 +673,17 @@ async function readCrop(){
     if(!currentCheck||previousCheck.errs.length+previousCheck.warns.length<currentCheck.errs.length+currentCheck.warns.length){text=previousReading;releituraNumericaInfo=previousGeometry;leituraDuvidosa20=previousDoubt20;leituraCompatDuvidosa=true}
    }
   }
+  if(!leituraCompletaInfo){
+   var oldText=text,oldGeometry=releituraNumericaInfo;
+   try{var aligned=await ocrAligned(readSource,box.automatic?(detectBlueBand(readSource)||readBox):readBox);if(leituraCompletaInfo)text=aligned;else if(aligned&&(!text||chk(aligned,true).errs.length<chk(text,true).errs.length)){text=aligned;releituraNumericaInfo=null}}
+   catch(e){diagnosticoLeitura.falhaAlinhamento={mensagem:String(e)}}
+   if(!leituraCompletaInfo){leituraCompatDuvidosa=true;if(text===oldText)releituraNumericaInfo=oldGeometry}
+  }
   if(!text)throw new Error('Leitura incerta: as tentativas não concordaram. Ajuste a área (só as duas linhas) e leia de novo, ou tire outra foto sem reflexo.');
   $("txt").value=text;pendingFile=null;setStatus((leituraDuvidosa20||leituraCompatDuvidosa)?'Leitura não confirmada: nenhuma tentativa completa passou em todas as regras. Confira o display.':(zoom?'Zoom automático aplicado. ':'')+'Leitura feita. Confira o texto reconhecido com o display.',leituraDuvidosa20||leituraCompatDuvidosa);$("go").onclick();
  }catch(error){
   $("txt").value='';$("out").textContent='';
-  pendingCanvas=src;cropSel=box;src=null;$("cropPanel").hidden=false;drawCrop();
+  pendingCanvas=src;cropSel=selectionBox;src=null;$("cropPanel").hidden=false;drawCrop();
   setStatus(error&&error.message?error.message:'Não foi possível ler a foto. Ajuste a área e tente de novo.',true);showGeometryDiagnostic();
  }finally{if(high)clearCanvas(high);if(src)clearCanvas(src);setBusy(false);saveState(false)}
 }
@@ -779,7 +824,11 @@ function chk(textOverride,ignoreReadingWarnings){
  if(!errs.length&&!/^BS[A-Z]{2}\d{2} FAB:[A-Z]{3}[\/-]\d{4} VAL:[A-Z]{3}[\/-]\d{4}(?: \d{1,3})?$/.test(b))errs.push("A linha do BS tem caracteres a mais, a menos ou fora do padrão: "+b);
  return{errs:errs,oks:oks,warns:warns,notes:notes}}
 
-$("go").onclick=function(){var r=chk(),o=$("out");
+$("go").onclick=function(){
+ if(!$("txt").value.trim()||pendingCanvas){
+  $("out").textContent='';var aviso=document.createElement('div');aviso.className='res wn';aviso.textContent=pendingCanvas?'Confira o recorte e toque em Ler esta área antes de verificar.':'Selecione uma foto e conclua a leitura antes de verificar.';$("out").appendChild(aviso);return;
+ }
+ var r=chk(),o=$("out");
  o.innerHTML="";var d=document.createElement("div");
  if(leituraCompatDuvidosa){d.className="res wn";d.style.fontSize="20px";d.textContent="⚠️ LEITURA NÃO CONFIRMADA";var uncertainList=document.createElement('ul');r.errs.concat(r.warns).forEach(function(t){var li=document.createElement('li');li.textContent=t;uncertainList.appendChild(li)});d.appendChild(uncertainList)}
  else if(r.errs.length){d.className="res er";d.style.fontSize="20px";d.textContent="❌ CODIFICAÇÃO ERRADA ("+r.errs.length+" problema"+(r.errs.length>1?"s":"")+")";var u=document.createElement("ul");r.errs.forEach(function(e){var li=document.createElement("li");li.textContent=e;u.appendChild(li)});d.appendChild(u);if(r.warns.length){var w=document.createElement('ul');r.warns.forEach(function(e){var li=document.createElement('li');li.textContent=e;w.appendChild(li)});d.appendChild(w)}}
@@ -838,12 +887,12 @@ function showGeometryDiagnostic(){
  if(panel.hidden)return;
  var approved=leituraCompletaInfo?(leituraCompletaInfo.metodo==='consenso-geometrico-20l'?' Aprovado por consenso dos campos e geometria: lote '+leituraCompletaInfo.confirmacoesLote+' leituras, BS '+leituraCompletaInfo.confirmacoesBS+' leituras, 7 confirmado '+leituraCompletaInfo.confirmacoesGeometria+' vezes.':' Leitura completa aprovada: tentativa '+leituraCompletaInfo.tentativa+' do modo '+leituraCompletaInfo.modo+'.'):' Nenhuma leitura aprovada.';
  var geometryByStage=diagnosticoLeitura.etapas.map(function(s){var traces=s.geometria||[];return s.modo+': '+traces.filter(function(t){return t.etapa==='geometria confirmou 7'}).length+' confirmações em '+traces.length+' análises'}).join('; ');
- $('geometrySummary').textContent='Versão 9.2. Processamentos: '+diagnosticoLeitura.etapas.map(function(s){return s.modo+' ('+s.preparada.largura+' × '+s.preparada.altura+')'}).join('; ')+'.'+approved+(linha==='20L'?' Geometria por processamento: '+geometryByStage+'.':'');
+ $('geometrySummary').textContent='Versão 9.3. Processamentos: '+diagnosticoLeitura.etapas.map(function(s){return s.modo+' ('+s.preparada.largura+' × '+s.preparada.altura+')'}).join('; ')+'.'+approved+(linha==='20L'?' Geometria por processamento: '+geometryByStage+'.':'');
 }
 $('saveDiagnostic').onclick=function(){
- var report={versao:'9.2',diagnostico:diagnosticoLeitura,leituraCompleta:leituraCompletaInfo,data:new Date().toISOString(),linha:linha,produto:prod,pallets:$('pal').value,texto:$('txt').value,geometria:diagnosticoLeitura.etapas.reduce(function(all,s){return all.concat(s.geometria||[])},[]),correcao:releituraNumericaInfo,resultado:chk()};
+ var report={versao:'9.3',diagnostico:diagnosticoLeitura,leituraCompleta:leituraCompletaInfo,data:new Date().toISOString(),linha:linha,produto:prod,pallets:$('pal').value,texto:$('txt').value,geometria:diagnosticoLeitura.etapas.reduce(function(all,s){return all.concat(s.geometria||[])},[]),correcao:releituraNumericaInfo,resultado:chk()};
  var blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='diagnostico-verificador-9-2.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},60000);
+ a.href=url;a.download='diagnostico-verificador-9-3.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},60000);
 };
 
 </script>
