@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Verificador de lote · 9.1</title>
+<title>Verificador de lote · 9.2</title>
 <meta name="apple-mobile-web-app-title" content="Verificador de lote">
 <meta name="theme-color" content="#15334c">
 <link rel="apple-touch-icon" href="icone-lote.png">
@@ -16,7 +16,7 @@
 </head>
 <body>
 <main>
-<header class="hero"><div class="eyebrow">Conferência de envase</div><h1>Verificador de<br>virada de lote</h1><p>Selecione a linha e confira a codificação da embalagem.</p><p style="font-size:12px;margin-top:12px">Versão 9.1 · validação por leitura completa</p></header>
+<header class="hero"><div class="eyebrow">Conferência de envase</div><h1>Verificador de<br>virada de lote</h1><p>Selecione a linha e confira a codificação da embalagem.</p><p style="font-size:12px;margin-top:12px">Versão 9.2 · validação por leitura completa</p></header>
 <section class="card">
 
 <h2>Selecione a linha de embalagem</h2>
@@ -33,7 +33,7 @@
 <div class="instruction-box">
  <small><b>Como proceder:</b><br>
  1. Tire uma foto nítida do display, evitando reflexos.<br>
- 2. Selecione a foto na galeria. O verificador selecionará a área automaticamente; confira a seleção e toque em <b>Ler esta área</b>.</small>
+ 2. Selecione a foto na galeria. Confira se o amarelo envolve somente as duas linhas. Se necessário, arraste o dedo na foto para marcar outra área e toque em <b>Ler esta área</b>.</small>
 </div>
 
 <div class="fb off">
@@ -45,8 +45,10 @@
 
 <div id="cropPanel" hidden>
 <canvas id="cropCanvas" style="width:100%;touch-action:none;border-radius:10px;background:#000;display:block"></canvas>
+<p><small id="cropHint" role="status"></small></p><div class="row"><button type="button" id="cropRotate">Girar foto ↻</button><button type="button" id="cropAuto">Selecionar automaticamente</button></div>
 <div class="row" style="margin-top:10px"><button type="button" id="cropGo" class="main" style="margin:0">Ler esta área</button><button type="button" id="cropCancel">Cancelar</button></div>
 </div>
+<div id="ocrPreviewPanel" hidden style="margin-top:14px"><small id="ocrPreviewLabel"></small><canvas id="ocrPreview" style="display:block;width:100%;height:auto;margin-top:8px;border:1px solid var(--bd);border-radius:8px"></canvas></div>
 
 </section>
 <section class="card">
@@ -129,7 +131,7 @@ async function smallCanvas(file,zoom){
  var bitmap=null,img=null,url=null,canvas=null;
  try{
   if(window.createImageBitmap){
-   try{if(!zoom)bitmap=await createImageBitmap(file,{resizeWidth:MAX_SIDE,resizeQuality:'medium'});else bitmap=await createImageBitmap(file)}catch(e){}
+   try{bitmap=await createImageBitmap(file,zoom?{imageOrientation:'from-image'}:{imageOrientation:'from-image',resizeWidth:MAX_SIDE,resizeQuality:'medium'})}catch(e){}
   }
   if(bitmap){
    var size=fitSize(bitmap.width,bitmap.height,zoom);
@@ -186,15 +188,73 @@ function detectBlueBand(source){
  return {left:Math.max(0,left-5),right:Math.min(W-1,right+5),top:band.top,bottom:band.bottom};
 }
 
-// Select the image area independently of the packaging being checked.
+// Detection uses a bounded analysis canvas; all returned coordinates refer to source.
+// A colour region is only a search window. Require two separate bright text rows.
 function detectPhotoArea(source){
- var original=detectBox(source),band=detectBlueBand(source);
- if(!band)return original;
- // Preserve the successful 1 L crop. Prefer a contiguous blue band only
- // when the broad detector also captured the menu or a separated blue strip.
- return original.bottom-original.top+1>(band.bottom-band.top+1)*1.3?band:original;
+ var cv=document.createElement('canvas'),scale=Math.min(1,800/source.width);
+ cv.width=Math.max(1,Math.round(source.width*scale));cv.height=Math.max(1,Math.round(source.height*scale));
+ var cx=cv.getContext('2d');cx.drawImage(source,0,0,cv.width,cv.height);
+ var W=cv.width,H=cv.height,p=cx.getImageData(0,0,W,H).data,rows=new Uint32Array(H),x,y;
+ function blue(i){return p[i+2]>65&&p[i+2]>p[i]+10&&p[i+2]>p[i+1]+5&&Math.max(p[i],p[i+1],p[i+2])-Math.min(p[i],p[i+1],p[i+2])>25}
+ for(y=0;y<H;y++)for(x=0;x<W;x++)if(blue((y*W+x)*4))rows[y]++;
+ var runs=[],start=-1;
+ for(y=0;y<=H;y++){
+  var active=y<H&&rows[y]>=W*.14;
+  if(active&&start<0)start=y;
+  if(!active&&start>=0){if(y-start>=8)runs.push({top:start,bottom:y-1});start=-1}
+ }
+ var best=null,bestScore=-Infinity;
+ runs.forEach(function(band){
+  var left=W,right=-1,sum=0,n=0;
+  for(var yy=band.top;yy<=band.bottom;yy++)for(var xx=0;xx<W;xx++){
+   var i=(yy*W+xx)*4;if(blue(i)){left=Math.min(left,xx);right=Math.max(right,xx);sum+=(p[i]+p[i+1]+p[i+2])/3;n++}
+  }
+  var bw=right-left+1,bh=band.bottom-band.top+1;
+  if(bw<60||bh<12||!n)return;
+  var threshold=Math.max(115,sum/n+28),lines=[],run=null;
+  // Menus are usually above the preview. Search lower half of a tall display,
+  // or the entire band when it already has the shape of a two-line strip.
+  var from=bh>bw*.28?Math.floor(band.top+bh*.5):band.top;
+  for(var yy=from;yy<=band.bottom+1;yy++){
+   var count=0,l=right,r=left;
+   if(yy<=band.bottom)for(var xx=left+2;xx<right-2;xx++){
+    var i=(yy*W+xx)*4,hi=Math.max(p[i],p[i+1],p[i+2]),lo=Math.min(p[i],p[i+1],p[i+2]);
+    if((p[i]+p[i+1]+p[i+2])/3>threshold&&hi-lo<95){count++;l=Math.min(l,xx);r=Math.max(r,xx)}
+   }
+   if(count>=Math.max(4,bw*.022)){
+    if(!run)run={top:yy,bottom:yy,left:l,right:r};
+    run.bottom=yy;run.left=Math.min(run.left,l);run.right=Math.max(run.right,r);
+   }else if(run){if(run.bottom-run.top+1>=2)lines.push(run);run=null}
+  }
+  for(var j=0;j<lines.length-1;j++){
+   var a=lines[j],b=lines[j+1],ah=a.bottom-a.top+1,bh2=b.bottom-b.top+1,gap=b.top-a.bottom-1;
+   var tw=Math.max(a.right,b.right)-Math.min(a.left,b.left)+1,th=b.bottom-a.top+1;
+   if(gap<1||gap>Math.max(ah,bh2)*2.5||Math.max(ah,bh2)>Math.min(ah,bh2)*2.5||tw<Math.max(60,bw*.25)||tw/th<2.8||a.right-a.left<bw*.12||b.right-b.left<bw*.2)continue;
+   var score=tw+100*(b.bottom-band.top)/(band.bottom-band.top+1);
+   if(score>bestScore){
+    var pad=Math.max(4,Math.round(Math.max(ah,bh2)*.6));
+    best={left:Math.max(0,Math.min(a.left,b.left)-pad),right:Math.min(W-1,Math.max(a.right,b.right)+pad),top:Math.max(0,a.top-pad),bottom:Math.min(H-1,b.bottom+pad)};bestScore=score;
+   }
+  }
+ });
+ clearCanvas(cv);
+ if(best){
+  var sx=source.width/W,sy=source.height/H;
+  return {left:Math.floor(best.left*sx),top:Math.floor(best.top*sy),right:Math.min(source.width-1,Math.ceil((best.right+1)*sx)-1),bottom:Math.min(source.height-1,Math.ceil((best.bottom+1)*sy)-1),automatic:true};
+ }
+ // Do not present the whole screen as if two lines had been found.
+ var fallback=detectBlueBand(source)||detectBox(source);fallback.automatic=false;return fallback;
 }
-function needsPhotoZoom(source,box){return (box.right-box.left+1)/source.width<0.65}
+function needsPhotoZoom(source,box){
+ return (box.right-box.left+1)/source.width<.65||(box.bottom-box.top+1)/source.height<.35;
+}
+function showOCRPreview(source,box,prepared){
+ var cv=$('ocrPreview'),w=box?box.right-box.left+1:source.width,h=box?box.bottom-box.top+1:source.height,k=Math.min(1,1600/w,Math.sqrt(1800000/(w*h)));
+ cv.width=Math.max(1,Math.round(w*k));cv.height=Math.max(1,Math.round(h*k));
+ cv.getContext('2d').drawImage(source,box?box.left:0,box?box.top:0,w,h,0,0,cv.width,cv.height);
+ $('ocrPreviewPanel').hidden=false;
+ $('ocrPreviewLabel').textContent=prepared?'Último recorte preparado para leitura (antes das variações de contraste):':'Prévia da área que será enviada à leitura. Confira as duas linhas:';
+}
 
 function prepareDisplay(source,box,zoom){
  var cw=box.right-box.left+1,ch=box.bottom-box.top+1;
@@ -304,7 +364,7 @@ function validateCompleteReading(candidate){
  return {texto:text,resultado:result,valida:!result.errs.length&&!result.warns.length};
 }
 
-var diagnosticoLeitura={versao:'9.1',ambiente:{agente:navigator.userAgent},etapas:[]},leituraCompatDuvidosa=false;
+var diagnosticoLeitura={versao:'9.2',ambiente:{agente:navigator.userAgent},etapas:[]},leituraCompatDuvidosa=false;
 function pixelFingerprint(bytes){var h=2166136261;for(var i=0;i<bytes.length;i++){h^=bytes[i];h=Math.imul(h,16777619)}return ('00000000'+(h>>>0).toString(16)).slice(-8)}
 // Fixed pixel resampling for the compatibility fallback: identical input bytes
 // and dimensions yield identical output; image decoding can still vary.
@@ -364,6 +424,7 @@ async function ocr(source,box,zoom,uniform){
  try{
   canvas=uniform?prepareUniform(source,box,zoom):prepareDisplay(source,box,zoom);
   var removedFrame=suppressLeftFrame(canvas);
+  showOCRPreview(canvas,null,true);
   await loadOCR();
   setStatus('Preparando o leitor no aparelho...');
   worker=await Tesseract.createWorker('eng',1,{
@@ -464,8 +525,8 @@ async function ocr(source,box,zoom,uniform){
  }
 }
 
-var pendingCanvas=null,pendingFile=null,cropSel=null,dragStart=null;
-function dropPending(){clearCanvas(pendingCanvas);pendingCanvas=null;pendingFile=null;cropSel=null;$("cropPanel").hidden=true}
+var pendingCanvas=null,pendingFile=null,cropSel=null,dragStart=null,pendingRotation=0;
+function dropPending(){clearCanvas(pendingCanvas);pendingCanvas=null;pendingFile=null;cropSel=null;dragStart=null;pendingRotation=0;$("cropPanel").hidden=true;$("ocrPreviewPanel").hidden=true;clearCanvas($("ocrPreview"))}
 function drawCrop(){
  var src=pendingCanvas,cv=$("cropCanvas");if(!src||!cropSel)return;
  var sc=Math.min(1,720/src.width);cv.width=Math.round(src.width*sc);cv.height=Math.round(src.height*sc);cv.dataset.s=sc;
@@ -473,28 +534,49 @@ function drawCrop(){
  var x=cropSel.left*sc,y=cropSel.top*sc,w=(cropSel.right-cropSel.left+1)*sc,h=(cropSel.bottom-cropSel.top+1)*sc;
  c.fillStyle='rgba(0,0,0,.5)';c.fillRect(0,0,cv.width,y);c.fillRect(0,y+h,cv.width,cv.height-y-h);c.fillRect(0,y,x,h);c.fillRect(x+w,y,cv.width-x-w,h);
  c.strokeStyle='#ffd400';c.lineWidth=3;c.strokeRect(x,y,w,h);
+ showOCRPreview(src,cropSel,false);
+ $('cropHint').textContent=cropSel.automatic?'Sugestão automática: confira se as duas linhas estão completas.':'Seleção para conferir: arraste do canto superior esquerdo ao inferior direito das duas linhas. Se a foto estiver de lado, use Girar foto.';
 }
 function cropPoint(e){
  var cv=$("cropCanvas"),r=cv.getBoundingClientRect(),sc=+cv.dataset.s;
  return {x:Math.max(0,Math.min(pendingCanvas.width-1,(e.clientX-r.left)*(cv.width/r.width)/sc)),y:Math.max(0,Math.min(pendingCanvas.height-1,(e.clientY-r.top)*(cv.height/r.height)/sc))};
 }
-$("cropCanvas").onpointerdown=function(e){if(!pendingCanvas)return;this.setPointerCapture(e.pointerId);dragStart=cropPoint(e)};
-$("cropCanvas").onpointermove=function(e){
+function beginCrop(e){if(!pendingCanvas||busy)return;dragStart=cropPoint(e);if(e.preventDefault)e.preventDefault()}
+function moveCrop(e){
  if(!dragStart||!pendingCanvas)return;var p=cropPoint(e);
- cropSel={left:Math.round(Math.min(dragStart.x,p.x)),top:Math.round(Math.min(dragStart.y,p.y)),right:Math.round(Math.max(dragStart.x,p.x)),bottom:Math.round(Math.max(dragStart.y,p.y))};drawCrop();
+ cropSel={left:Math.round(Math.min(dragStart.x,p.x)),top:Math.round(Math.min(dragStart.y,p.y)),right:Math.round(Math.max(dragStart.x,p.x)),bottom:Math.round(Math.max(dragStart.y,p.y)),automatic:false};drawCrop();if(e.preventDefault)e.preventDefault();
+}
+function endCrop(e){if(dragStart&&e)moveCrop(e);dragStart=null}
+var cropElement=$('cropCanvas');
+if(window.PointerEvent){
+ cropElement.onpointerdown=function(e){if(e.isPrimary===false)return;beginCrop(e);try{this.setPointerCapture(e.pointerId)}catch(ignore){}};
+ cropElement.onpointermove=moveCrop;cropElement.onpointerup=endCrop;
+ cropElement.onpointercancel=cropElement.onlostpointercapture=function(){dragStart=null};
+}else{
+ cropElement.addEventListener('touchstart',function(e){if(e.touches.length===1)beginCrop(e.touches[0]);e.preventDefault()},{passive:false});
+ cropElement.addEventListener('touchmove',function(e){if(e.touches.length===1)moveCrop(e.touches[0]);e.preventDefault()},{passive:false});
+ cropElement.addEventListener('touchend',function(e){endCrop(e.changedTouches[0]);e.preventDefault()},{passive:false});
+ cropElement.addEventListener('touchcancel',function(){dragStart=null});
+ cropElement.onmousedown=beginCrop;window.addEventListener('mousemove',moveCrop);window.addEventListener('mouseup',endCrop);
+}
+$('cropAuto').onclick=function(){if(!pendingCanvas||busy)return;cropSel=detectPhotoArea(pendingCanvas);drawCrop()};
+$('cropRotate').onclick=function(){
+ if(!pendingCanvas||busy)return;
+ var old=pendingCanvas,cv=document.createElement('canvas');cv.width=old.height;cv.height=old.width;
+ var c=cv.getContext('2d');c.translate(cv.width,0);c.rotate(Math.PI/2);c.drawImage(old,0,0);
+ pendingCanvas=cv;pendingRotation=(pendingRotation+90)%360;clearCanvas(old);cropSel=detectPhotoArea(cv);drawCrop();
 };
-$("cropCanvas").onpointerup=$("cropCanvas").onpointercancel=function(){dragStart=null};
 
 async function processPhoto(source){
  if(busy){clearCanvas(source);return}
- dropPending();leituraCompletaInfo=null;leituraDuvidosa20=false;leituraCompatDuvidosa=false;releituraNumericaInfo=null;geometryTrace20=[];diagnosticoLeitura={versao:'9.1',ambiente:{agente:navigator.userAgent},arquivo:{nome:source.name||'',bytes:source.size||0},etapas:[]};$('geometryDiagnostic').hidden=true;setBusy(true);$("txt").value='';$("out").textContent='';saveState(true);
+ dropPending();leituraCompletaInfo=null;leituraDuvidosa20=false;leituraCompatDuvidosa=false;releituraNumericaInfo=null;geometryTrace20=[];diagnosticoLeitura={versao:'9.2',ambiente:{agente:navigator.userAgent},arquivo:{nome:source.name||'',bytes:source.size||0},etapas:[]};$('geometryDiagnostic').hidden=true;setBusy(true);$("txt").value='';$("out").textContent='';saveState(true);
  setStatus('Reduzindo a foto para economizar memória...');
  try{
   pendingFile=source instanceof HTMLCanvasElement?null:source;
   var canvas=source instanceof HTMLCanvasElement?source:await smallCanvas(source,false);source=null;
   diagnosticoLeitura.imagemInicial={largura:canvas.width,altura:canvas.height};
   pendingCanvas=canvas;cropSel=detectPhotoArea(canvas);$("cropPanel").hidden=false;drawCrop();
-  setStatus('Confira a área selecionada e toque em Ler esta área.');
+  setStatus(cropSel.automatic?'Confira as duas linhas na prévia e toque em Ler esta área.':'Não foi possível isolar as duas linhas automaticamente. Ajuste o amarelo com o dedo antes de ler.');
  }catch(error){
   dropPending();setStatus(error&&error.message?error.message:'Não foi possível abrir a foto.',true);
  }finally{setBusy(false);saveState(false)}
@@ -502,7 +584,8 @@ async function processPhoto(source){
 
 async function readCrop(){
  if(busy||!pendingCanvas)return;
- var src=pendingCanvas,box=cropSel;
+ var src=pendingCanvas,box=Object.assign({},cropSel);
+ diagnosticoLeitura.selecao={origem:box.automatic?'automatica':'manual-ou-area-ampla',area:Object.assign({},box),rotacao:pendingRotation};
  if(box.right-box.left<40||box.bottom-box.top<10){setStatus('Área muito pequena. Marque as duas linhas com o dedo.',true);return}
  pendingCanvas=null;cropSel=null;$("cropPanel").hidden=true;
  setBusy(true);saveState(true);
@@ -510,7 +593,10 @@ async function readCrop(){
  async function tryHighResolution(){
   if(highAttempted||!pendingFile)return high;
   highAttempted=true;
-  try{high=await smallCanvas(pendingFile,true)}catch(error){
+  try{
+   high=await smallCanvas(pendingFile,true);
+   if(pendingRotation){var turned=document.createElement('canvas');turned.width=pendingRotation%180?high.height:high.width;turned.height=pendingRotation%180?high.width:high.height;var ctx=turned.getContext('2d');ctx.translate(turned.width/2,turned.height/2);ctx.rotate(pendingRotation*Math.PI/180);ctx.drawImage(high,-high.width/2,-high.height/2);clearCanvas(high);high=turned}
+  }catch(error){
    diagnosticoLeitura.reabertura={falhou:true,mensagem:error&&error.message?error.message:String(error),alternativa:'imagem já carregada mantida'};
    high=null;
   }
@@ -752,12 +838,12 @@ function showGeometryDiagnostic(){
  if(panel.hidden)return;
  var approved=leituraCompletaInfo?(leituraCompletaInfo.metodo==='consenso-geometrico-20l'?' Aprovado por consenso dos campos e geometria: lote '+leituraCompletaInfo.confirmacoesLote+' leituras, BS '+leituraCompletaInfo.confirmacoesBS+' leituras, 7 confirmado '+leituraCompletaInfo.confirmacoesGeometria+' vezes.':' Leitura completa aprovada: tentativa '+leituraCompletaInfo.tentativa+' do modo '+leituraCompletaInfo.modo+'.'):' Nenhuma leitura aprovada.';
  var geometryByStage=diagnosticoLeitura.etapas.map(function(s){var traces=s.geometria||[];return s.modo+': '+traces.filter(function(t){return t.etapa==='geometria confirmou 7'}).length+' confirmações em '+traces.length+' análises'}).join('; ');
- $('geometrySummary').textContent='Versão 9.1. Processamentos: '+diagnosticoLeitura.etapas.map(function(s){return s.modo+' ('+s.preparada.largura+' × '+s.preparada.altura+')'}).join('; ')+'.'+approved+(linha==='20L'?' Geometria por processamento: '+geometryByStage+'.':'');
+ $('geometrySummary').textContent='Versão 9.2. Processamentos: '+diagnosticoLeitura.etapas.map(function(s){return s.modo+' ('+s.preparada.largura+' × '+s.preparada.altura+')'}).join('; ')+'.'+approved+(linha==='20L'?' Geometria por processamento: '+geometryByStage+'.':'');
 }
 $('saveDiagnostic').onclick=function(){
- var report={versao:'9.1',diagnostico:diagnosticoLeitura,leituraCompleta:leituraCompletaInfo,data:new Date().toISOString(),linha:linha,produto:prod,pallets:$('pal').value,texto:$('txt').value,geometria:diagnosticoLeitura.etapas.reduce(function(all,s){return all.concat(s.geometria||[])},[]),correcao:releituraNumericaInfo,resultado:chk()};
+ var report={versao:'9.2',diagnostico:diagnosticoLeitura,leituraCompleta:leituraCompletaInfo,data:new Date().toISOString(),linha:linha,produto:prod,pallets:$('pal').value,texto:$('txt').value,geometria:diagnosticoLeitura.etapas.reduce(function(all,s){return all.concat(s.geometria||[])},[]),correcao:releituraNumericaInfo,resultado:chk()};
  var blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='diagnostico-verificador-9-1.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},60000);
+ a.href=url;a.download='diagnostico-verificador-9-2.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},60000);
 };
 
 </script>
